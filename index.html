@@ -29,15 +29,68 @@ h1{font-size:22px;font-weight:500;margin-bottom:.4rem}
 footer{font-size:11px;color:#9c9a92;text-align:center;padding:8px;line-height:1.6}
 .civpro-pill{background:#E6F1FB;color:#0C447C}
 .contracts-pill{background:#FAEEDA;color:#412402}
+/* Auth bar + progress card */
+.authbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border-radius:12px;padding:9px 14px;border:.5px solid #d3d1c7;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:1rem;font-size:12.5px}
+.authbar-left{display:flex;align-items:center;gap:9px;color:#888780;flex:1;min-width:0}
+.authbar-avatar{width:24px;height:24px;border-radius:50%;flex-shrink:0;background:#EBF3FB}
+.authbar-name{color:#1a1a18;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.authbar-status{color:#888780;font-style:italic}
+.authbtn{font-size:12px;font-weight:500;padding:6px 13px;border-radius:7px;border:.5px solid #c8c6be;background:#fff;color:#1a1a18;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.authbtn:hover{background:#f5f4f0;border-color:#378ADD}
+.authbtn.primary{background:#378ADD;border-color:#378ADD;color:#fff}
+.authbtn.primary:hover{background:#185FA5;border-color:#185FA5}
+.gicon{width:13px;height:13px;flex-shrink:0}
+.progress-card{background:#fff;border-radius:14px;padding:1.25rem 1.5rem;border:.5px solid #d3d1c7;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:1rem;display:none}
+.progress-card.show{display:block}
+.progress-card h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#888780;font-weight:500;margin-bottom:11px}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:.9rem}
+.pcell{text-align:center;padding:10px 6px;border-radius:8px;background:#f8f7f3;border:.5px solid #d3d1c7}
+.pcell-v{font-size:20px;font-weight:500;color:#1a1a18;line-height:1}
+.pcell-l{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#888780;margin-top:5px}
+.recent-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:.5px dashed #e5e3dc;font-size:12px}
+.recent-row:first-of-type{border-top:none}
+.recent-set{flex:1;color:#1a1a18;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-meta{color:#888780;font-size:11px}
+.recent-score{font-weight:500;color:#3B6D11;font-variant-numeric:tabular-nums}
+.recent-score.low{color:#A32D2D}
+.recent-score.mid{color:#B06000}
+.config-warning{background:#FEF7E0;border:.5px solid #B06000;color:#412402;padding:10px 13px;border-radius:8px;font-size:12px;line-height:1.55;margin-bottom:1rem}
+.config-warning b{color:#B06000}
+@media (max-width:480px){
+  .pgrid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
 
+<div class="authbar" id="authbar">
+  <div class="authbar-left">
+    <span id="authStatus" class="authbar-status">Loading…</span>
+  </div>
+  <div id="authActions"></div>
+</div>
+
+<div class="config-warning" id="configWarning" style="display:none">
+  <b>Firebase config not set.</b> Authentication is disabled until you paste your Web SDK config into <code>firebase-shared.js</code>.
+  Get it at Firebase Console → studyaids-4f6d3 → Project Settings → Your apps → register a Web app.
+</div>
+
 <header>
 <h1>Law Study Pages</h1>
 <p class="tagline">Interactive quiz sets organized by subject. Multiple-choice, drag-and-drop, matching, and ordering questions with detailed rule statements, citations, and visual diagrams. Built around the rubrics and emphases of specific course materials.</p>
 </header>
+
+<section class="progress-card" id="progressCard">
+  <h3>Your progress</h3>
+  <div class="pgrid">
+    <div class="pcell"><div class="pcell-v" id="statSessions">—</div><div class="pcell-l">Sessions</div></div>
+    <div class="pcell"><div class="pcell-v" id="statAccuracy">—</div><div class="pcell-l">Avg accuracy</div></div>
+    <div class="pcell"><div class="pcell-v" id="statBest">—</div><div class="pcell-l">Best score</div></div>
+    <div class="pcell"><div class="pcell-v" id="statTime">—</div><div class="pcell-l">Total time</div></div>
+  </div>
+  <div id="recentSessions"></div>
+</section>
 
 <section class="subj">
 <div class="subj-h">
@@ -77,5 +130,111 @@ footer{font-size:11px;color:#9c9a92;text-align:center;padding:8px;line-height:1.
 <footer>Generated content paired with private course-materials repos. Not legal advice.</footer>
 
 </div>
+
+<script type="module">
+import {
+  isConfigured, signInWithGoogle, signOutCurrent, onAuth, fetchRecentSessions,
+} from './firebase-shared.js';
+
+const $ = (id) => document.getElementById(id);
+const GICON = '<svg class="gicon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.56c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.77c-.99.66-2.25 1.06-3.72 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.49 12c0-.73.13-1.44.35-2.1V7.07H2.18a11 11 0 0 0 0 9.86l3.66-2.83z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.65l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>';
+
+if (!isConfigured) {
+  $('configWarning').style.display = 'block';
+  $('authStatus').textContent = 'Auth disabled (config not set)';
+  $('authActions').innerHTML = '';
+} else {
+  onAuth(async (user) => {
+    if (user) renderSignedIn(user);
+    else renderSignedOut();
+  });
+}
+
+function renderSignedOut() {
+  $('authStatus').textContent = 'Sign in to sync progress across devices';
+  $('authStatus').className = 'authbar-status';
+  $('authActions').innerHTML = `<button class="authbtn primary" id="signInBtn">${GICON}Sign in with Google</button>`;
+  $('signInBtn').addEventListener('click', async () => {
+    try { await signInWithGoogle(); }
+    catch (e) {
+      console.error('Sign-in failed:', e);
+      alert('Sign-in failed: ' + (e.message || e.code || 'unknown'));
+    }
+  });
+  $('progressCard').classList.remove('show');
+}
+
+async function renderSignedIn(user) {
+  const name = user.displayName || user.email || 'Signed in';
+  const photo = user.photoURL ? `<img class="authbar-avatar" src="${user.photoURL}" alt="" referrerpolicy="no-referrer">` : '<div class="authbar-avatar"></div>';
+  $('authbar').querySelector('.authbar-left').innerHTML = `${photo}<span class="authbar-name">${name}</span>`;
+  $('authActions').innerHTML = '<button class="authbtn" id="signOutBtn">Sign out</button>';
+  $('signOutBtn').addEventListener('click', () => signOutCurrent());
+
+  // Load recent sessions and render progress
+  try {
+    const sessions = await fetchRecentSessions(user.uid, 25);
+    renderProgress(sessions);
+  } catch (e) {
+    console.error('Failed to load sessions:', e);
+    $('progressCard').classList.add('show');
+    $('recentSessions').innerHTML = '<p style="font-size:12px;color:#A32D2D;font-style:italic">Could not load progress (check Firestore Rules and authorized domains).</p>';
+  }
+}
+
+function renderProgress(sessions) {
+  const card = $('progressCard');
+  card.classList.add('show');
+  if (sessions.length === 0) {
+    $('statSessions').textContent = '0';
+    $('statAccuracy').textContent = '—';
+    $('statBest').textContent = '—';
+    $('statTime').textContent = '—';
+    $('recentSessions').innerHTML = '<p style="font-size:12px;color:#888780;font-style:italic;margin-top:.5rem">No sessions yet — complete a quiz to see stats here.</p>';
+    return;
+  }
+  const total = sessions.length;
+  const totalCorrect = sessions.reduce((a, s) => a + (s.correctCount || 0), 0);
+  const totalAnswered = sessions.reduce((a, s) => a + (s.questionsCount || 0), 0);
+  const acc = totalAnswered > 0 ? Math.round(100 * totalCorrect / totalAnswered) : 0;
+  const best = Math.max(...sessions.map((s) => Math.round(100 * (s.score || 0))));
+  const totalMs = sessions.reduce((a, s) => a + (s.durationMs || 0), 0);
+  const totalSec = Math.round(totalMs / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+  $('statSessions').textContent = total;
+  $('statAccuracy').textContent = acc + '%';
+  $('statBest').textContent = best + '%';
+  $('statTime').textContent = timeStr;
+
+  const top = sessions.slice(0, 5);
+  $('recentSessions').innerHTML = top.map((s) => {
+    const pct = Math.round(100 * (s.score || 0));
+    const cls = pct >= 80 ? '' : pct >= 60 ? 'mid' : 'low';
+    const when = s.completedAt && s.completedAt.toDate ? formatRelative(s.completedAt.toDate()) : '';
+    const subj = s.subject ? s.subject.charAt(0).toUpperCase() + s.subject.slice(1) : '';
+    return `<div class="recent-row">
+      <div class="recent-set">${s.setTitle || s.setSlug || 'Quiz'}</div>
+      <div class="recent-meta">${subj}${when ? ' · ' + when : ''}</div>
+      <div class="recent-score ${cls}">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function formatRelative(date) {
+  const ms = Date.now() - date.getTime();
+  const min = Math.round(ms / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return min + ' min ago';
+  const h = Math.round(min / 60);
+  if (h < 24) return h + 'h ago';
+  const d = Math.round(h / 24);
+  if (d < 30) return d + 'd ago';
+  return date.toLocaleDateString();
+}
+</script>
+
 </body>
 </html>
