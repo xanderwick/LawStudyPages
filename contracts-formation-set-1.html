@@ -20,6 +20,11 @@ h1{font-size:15px;font-weight:500;margin-bottom:1.25rem}
 .qtype.match{background:#FAEEDA;color:#412402}
 .qtype.order{background:#E1F5EE;color:#04342C}
 .qnum{font-size:12px;color:#b4b2a9;flex-shrink:0}
+.qtimer{font-size:11px;font-weight:500;letter-spacing:.03em;padding:3px 9px;border-radius:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.qtimer-green{background:#EAF3DE;color:#27500A}
+.qtimer-amber{background:#FAEEDA;color:#412402}
+.qtimer-red{background:#FCEBEB;color:#791F1F}
+.qtimer-done{background:#F1EFE8;color:#888780}
 .fact{font-size:13px;line-height:1.65;background:#f8f7f3;border-left:2px solid #378ADD;padding:11px 13px;border-radius:0 6px 6px 0;margin-bottom:.9rem}
 .stem{font-size:13.5px;font-weight:500;line-height:1.5;margin-bottom:.8rem}
 .choices{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
@@ -74,10 +79,41 @@ h1{font-size:15px;font-weight:500;margin-bottom:1.25rem}
 .btn.primary{background:#378ADD;color:#fff;border-color:#378ADD}
 .btn.primary:hover{background:#185FA5}
 .btn.dim{opacity:.35;pointer-events:none}
-.sc{text-align:center;padding:3rem 1rem}
+.sc{text-align:center;padding:2rem 1rem}
 .sc-n{font-size:64px;font-weight:500;color:#378ADD;line-height:1}
 .sc-sub{font-size:14px;color:#888780;margin-top:8px}
 .sc-msg{font-size:15px;font-weight:500;margin-top:1rem}
+/* Score circle (results) */
+.sc-circle{position:relative;width:140px;height:140px;margin:0 auto 1.25rem}
+.sc-circle svg{transform:rotate(-90deg)}
+.sc-circle .sc-bg{stroke:#e8e5df;fill:none;stroke-width:8}
+.sc-circle .sc-fg{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease-out}
+.sc-circle .sc-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sc-circle .sc-pct{font-size:34px;font-weight:500;line-height:1}
+.sc-circle .sc-lbl{font-size:11px;color:#888780;letter-spacing:.05em;text-transform:uppercase;margin-top:3px}
+.sc-title{font-size:22px;font-weight:500;margin-bottom:.3rem}
+.sc-summary{font-size:13px;color:#73726c;margin-bottom:1.5rem;line-height:1.6}
+.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.pill{padding:9px 14px;border-radius:10px;border:.5px solid;min-width:90px;text-align:center}
+.pill-v{font-size:18px;font-weight:500;line-height:1.1}
+.pill-l{font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.pill-ok{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.pill-bad{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.pill-time{background:#EBF3FB;border-color:#185FA5;color:#0C447C}
+.pill-hard{background:#FAEEDA;border-color:#854F0B;color:#633806}
+.topic-bd{text-align:left;background:#f8f7f3;border-radius:10px;padding:13px 15px;margin-bottom:1rem;border:.5px solid #d3d1c7}
+.topic-bd h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#888780;font-weight:500;margin-bottom:9px}
+.topic-row{display:grid;grid-template-columns:1fr 60px 50px;gap:8px;align-items:center;font-size:12px;padding:4px 0}
+.topic-name{line-height:1.4;color:#1a1a18}
+.topic-bar{height:6px;background:#e8e5df;border-radius:3px;overflow:hidden}
+.topic-bar-f{height:6px;border-radius:3px}
+.topic-bar-ok{background:#3B6D11}
+.topic-bar-bad{background:#A32D2D}
+.topic-pct{text-align:right;font-variant-numeric:tabular-nums;color:#73726c}
+.results-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:1.5rem}
+/* Review missed mode */
+.review-banner{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#791F1F;background:#FCEBEB;padding:6px 10px;border-radius:6px;text-align:center;margin-bottom:1rem;font-weight:500}
+.review-empty{text-align:center;padding:2rem 1rem;color:#888780;font-size:14px;font-style:italic}
 .dlabel{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#888780;margin-bottom:7px}
 .dflow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}
 .dn{padding:6px 10px;border-radius:6px;font-size:12px;line-height:1.35;text-align:center;border:.5px solid}
@@ -108,6 +144,7 @@ table.dt .no{background:#FCEBEB;color:#791F1F;font-weight:500}
 <div id="root"></div>
 </div>
 <script>
+var TIMER_SECONDS=108; /* 1.8 minutes per question (Contracts) */
 var Qs=[
 
 /* ── Q1  MC ── */
@@ -369,13 +406,30 @@ diag:`<div class="dlabel">UCC formation despite open terms — three sections wo
 /* ── STATE ── */
 function initQS(){
   return Qs.map(function(q){
-    if(q.type==='mc')return{sel:null,submitted:false};
-    if(q.type==='dragdrop')return{placements:new Array(q.items.length).fill(null),selItem:null,submitted:false};
-    if(q.type==='match')return{pairs:new Array(q.left.length).fill(null),selLeft:null,submitted:false};
-    if(q.type==='order')return{slots:new Array(q.correctOrder.length).fill(null),selItem:null,submitted:false};
+    var tBase={timeUsed:0,timerStart:null,timeExpired:false};
+    if(q.type==='mc')return Object.assign({sel:null,submitted:false},tBase);
+    if(q.type==='dragdrop')return Object.assign({placements:new Array(q.items.length).fill(null),selItem:null,submitted:false},tBase);
+    if(q.type==='match')return Object.assign({pairs:new Array(q.left.length).fill(null),selLeft:null,submitted:false},tBase);
+    if(q.type==='order')return Object.assign({slots:new Array(q.correctOrder.length).fill(null),selItem:null,submitted:false},tBase);
   });
 }
-var S={cur:0,done:false,qs:initQS()};
+var S={cur:0,done:false,qs:initQS(),mode:'normal',missedQueue:[]};
+/* mode: 'normal' (sequential), 'review' (stepping through missed Qs only) */
+
+/* ── TIMER HELPERS ── */
+function pauseTimer(qs){if(qs.timerStart!==null){qs.timeUsed+=Date.now()-qs.timerStart;qs.timerStart=null;}}
+function resumeTimer(qs){if(qs.timerStart===null&&!qs.submitted&&!qs.timeExpired)qs.timerStart=Date.now();}
+function elapsedMs(qs){return qs.timeUsed+(qs.timerStart!==null?Date.now()-qs.timerStart:0);}
+function remainingSec(qs){return Math.max(0,TIMER_SECONDS-elapsedMs(qs)/1000);}
+function timerStateClass(qs){
+  if(qs.submitted||qs.timeExpired)return'qtimer-done';
+  var r=remainingSec(qs);
+  if(r<=10)return'qtimer-red';
+  if(r<=30)return'qtimer-amber';
+  return'qtimer-green';
+}
+function fmtMS(sec){var m=Math.floor(sec/60);var s=Math.floor(sec-m*60);return m+':'+(s<10?'0':'')+s;}
+function pauseAllExceptCurrent(){S.qs.forEach(function(q,i){if(i!==S.cur)pauseTimer(q);});}
 
 /* ── HELPERS ── */
 function complete(q,qs){
@@ -468,25 +522,105 @@ function rOrder(q,qs){
     '</div>';
 }
 
+/* ── RESULTS SCREEN ── */
+function renderResults(){
+  var sc=totalScore();var pct=Math.round(sc/Qs.length*100);
+  var titles={
+    90:'Outstanding work, counselor.',
+    75:'Strong session — review the misses.',
+    60:'Good effort — targeted review needed.',
+    0:'Keep drilling — heavy review needed.'
+  };
+  var bracket=pct>=90?90:pct>=75?75:pct>=60?60:0;
+  var title=titles[bracket];
+  /* Stats */
+  var totalMs=S.qs.reduce(function(a,qs){return a+qs.timeUsed;},0);
+  var totalSec=Math.round(totalMs/1000);
+  var durMin=Math.floor(totalSec/60);var durSec=totalSec-durMin*60;
+  var durStr=durMin+'m '+(durSec<10?'0':'')+durSec+'s';
+  /* Hardest = question with most timeUsed (or any expired) */
+  var hardestIdx=-1,hardestMs=0;
+  S.qs.forEach(function(qs,i){
+    var ms=qs.timeExpired?TIMER_SECONDS*1000:qs.timeUsed;
+    if(ms>hardestMs){hardestMs=ms;hardestIdx=i;}
+  });
+  /* Score-circle */
+  var R=62,C=2*Math.PI*R;
+  var fgColor=pct>=75?'#3B6D11':pct>=50?'#B06000':'#A32D2D';
+  var dashOffset=C*(1-sc/Qs.length);
+  var circle='<div class="sc-circle">'+
+    '<svg width="140" height="140" viewBox="0 0 140 140">'+
+    '<circle class="sc-bg" cx="70" cy="70" r="'+R+'"/>'+
+    '<circle class="sc-fg" cx="70" cy="70" r="'+R+'" stroke="'+fgColor+'" stroke-dasharray="'+C+'" stroke-dashoffset="'+dashOffset+'"/>'+
+    '</svg>'+
+    '<div class="sc-text"><div class="sc-pct" style="color:'+fgColor+'">'+pct+'%</div><div class="sc-lbl">score</div></div>'+
+    '</div>';
+  /* Pills */
+  var missed=Qs.length-sc;
+  var pills='<div class="pills">'+
+    '<div class="pill pill-ok"><div class="pill-v">'+sc+'</div><div class="pill-l">Correct</div></div>'+
+    '<div class="pill pill-bad"><div class="pill-v">'+missed+'</div><div class="pill-l">Missed</div></div>'+
+    '<div class="pill pill-time"><div class="pill-v">'+durStr+'</div><div class="pill-l">Duration</div></div>'+
+    (hardestIdx>=0?'<div class="pill pill-hard"><div class="pill-v">#'+(hardestIdx+1)+'</div><div class="pill-l">Hardest</div></div>':'')+
+    '</div>';
+  /* Topic breakdown */
+  var bd={};
+  Qs.forEach(function(q,i){
+    var t=q.topic;if(!bd[t])bd[t]={n:0,c:0};
+    bd[t].n++;if(S.qs[i].submitted&&correct(q,S.qs[i]))bd[t].c++;
+  });
+  var keys=Object.keys(bd);
+  keys.sort(function(a,b){return(bd[a].c/bd[a].n)-(bd[b].c/bd[b].n);}); /* worst first */
+  var bdHtml='<div class="topic-bd"><h3>Topic breakdown</h3>';
+  keys.forEach(function(t){
+    var p=Math.round(bd[t].c/bd[t].n*100);
+    var cls=p>=75?'topic-bar-ok':'topic-bar-bad';
+    bdHtml+='<div class="topic-row">'+
+      '<div class="topic-name">'+t+'</div>'+
+      '<div class="topic-bar"><div class="topic-bar-f '+cls+'" style="width:'+p+'%"></div></div>'+
+      '<div class="topic-pct">'+bd[t].c+'/'+bd[t].n+'</div>'+
+      '</div>';
+  });
+  bdHtml+='</div>';
+  /* Action buttons */
+  var canReview=missed>0;
+  var actions='<div class="results-actions">'+
+    (canReview?'<button class="btn" data-action="review">Review missed</button>':'')+
+    '<button class="btn primary" data-action="restart">Retake quiz</button>'+
+    '</div>';
+  return'<div class="pb-bg"><div class="pb-f" style="width:100%"></div></div>'+
+    '<div class="sc">'+
+    circle+
+    '<div class="sc-title">'+title+'</div>'+
+    '<div class="sc-summary">'+sc+' of '+Qs.length+' correct &nbsp;·&nbsp; total '+durStr+
+    (hardestIdx>=0?'&nbsp;·&nbsp; longest on Q'+(hardestIdx+1):'')+
+    '</div>'+
+    pills+
+    bdHtml+
+    actions+
+    '</div>';
+}
+
 /* ── MAIN RENDER ── */
 function render(){
   var root=document.getElementById('root');
-  if(S.done){
-    var sc=totalScore();var pct=Math.round(sc/Qs.length*100);
-    var msg=pct>=90?'Excellent — exam ready.':pct>=80?'Strong — review the misses.':pct>=70?'Solid — targeted review needed.':pct>=60?'Keep drilling.':'Heavy review needed — use the diagrams.';
-    root.innerHTML='<div class="pb-bg"><div class="pb-f" style="width:100%"></div></div>'+
-      '<div class="sc"><div class="sc-n">'+sc+'/'+Qs.length+'</div><div class="sc-sub">'+pct+'% correct</div>'+
-      '<div class="sc-msg">'+msg+'</div>'+
-      '<button class="btn primary" data-action="restart" style="margin-top:1.5rem">Retake quiz</button></div>';
-    return;
-  }
+  if(S.done){root.innerHTML=renderResults();return;}
+  pauseAllExceptCurrent();
   var q=Qs[S.cur],qs=S.qs[S.cur],s=qs.submitted;
+  if(!s&&!qs.timeExpired)resumeTimer(qs);
   var pct=Math.round((S.cur+1)/Qs.length*100);
   var typeLabel={mc:'multiple choice',dragdrop:'drag & drop',match:'matching',order:'ordering'};
+  /* Timer badge */
+  var timerHtml;
+  if(qs.timeExpired)timerHtml='<span class="qtimer qtimer-red">TIME UP</span>';
+  else timerHtml='<span class="qtimer '+timerStateClass(qs)+'">'+fmtMS(remainingSec(qs))+'</span>';
+  var reviewBanner=(S.mode==='review')?'<div class="review-banner">Review · missed questions only · '+(S.missedQueue.indexOf(S.cur)+1)+' / '+S.missedQueue.length+'</div>':'';
   var html='<div class="pb-bg"><div class="pb-f" style="width:'+pct+'%"></div></div>'+
+    reviewBanner+
     '<div class="qh"><div class="qh-l"><span class="qtag">'+q.topic+'</span>'+
     '<span class="qtype '+q.type+'">'+typeLabel[q.type]+'</span></div>'+
-    '<span class="qnum">'+(S.cur+1)+' / '+Qs.length+'</span></div>';
+    '<div style="display:flex;gap:7px;align-items:center;flex-shrink:0">'+timerHtml+
+    '<span class="qnum">'+(S.cur+1)+' / '+Qs.length+'</span></div></div>';
   if(q.fact)html+='<div class="fact">'+q.fact+'</div>';
   html+='<div class="stem">'+q.stem+'</div>';
   if(q.type==='mc')html+=rMC(q,qs);
@@ -495,13 +629,42 @@ function render(){
   else if(q.type==='order')html+=rOrder(q,qs);
   if(s)html+='<div class="expbox">'+q.exp+'</div><div class="dbox">'+q.diag+'</div>';
   var ok=complete(q,qs);
+  /* Navigation differs by mode */
+  var isLast,prevAvailable;
+  if(S.mode==='review'){
+    var pos=S.missedQueue.indexOf(S.cur);
+    isLast=(pos===S.missedQueue.length-1);
+    prevAvailable=(pos>0);
+  }else{
+    isLast=(S.cur===Qs.length-1);
+    prevAvailable=(S.cur>0);
+  }
   html+='<div class="nav">'+
-    (S.cur>0?'<button class="btn" data-action="prev">← Previous</button>':'')+
-    (!s?'<button class="btn primary'+(ok?'':' dim')+'" data-action="check">Check answer</button>':'')+
-    (s?'<button class="btn primary" data-action="'+(S.cur===Qs.length-1?'finish':'next')+'">'+(S.cur===Qs.length-1?'See results':'Next →')+'</button>':'')+
+    (prevAvailable?'<button class="btn" data-action="prev">← Previous</button>':'')+
+    (!s&&!qs.timeExpired?'<button class="btn primary'+(ok?'':' dim')+'" data-action="check">Check answer</button>':'')+
+    ((s||qs.timeExpired)?'<button class="btn primary" data-action="'+(isLast?(S.mode==='review'?'doneReview':'finish'):'next')+'">'+(isLast?(S.mode==='review'?'Done reviewing':'See results'):'Next →')+'</button>':'')+
     '</div>';
   root.innerHTML=html;
 }
+
+/* ── TIMER TICK ── */
+/* Update the timer badge in-place every 250ms without a full re-render
+   (full re-render would interrupt drag/match/order state mid-interaction). */
+setInterval(function(){
+  if(S.done)return;
+  var qs=S.qs[S.cur];
+  if(!qs||qs.submitted||qs.timeExpired)return;
+  if(qs.timerStart===null)return;
+  if(remainingSec(qs)<=0){
+    pauseTimer(qs);
+    qs.timeExpired=true;
+    qs.submitted=true;
+    render();
+    return;
+  }
+  var t=document.querySelector('.qtimer');
+  if(t){t.textContent=fmtMS(remainingSec(qs));t.className='qtimer '+timerStateClass(qs);}
+},250);
 
 /* ── DRAG EVENTS ── */
 var dragId=null;
@@ -570,11 +733,48 @@ document.getElementById('root').addEventListener('click',function(e){
     }else if(qs.slots[sj]!==null){qs.selItem=qs.slots[sj];qs.slots[sj]=null;}
   }
 
-  else if(a==='check'){if(complete(q,qs))qs.submitted=true;}
-  else if(a==='next'){S.cur=Math.min(Qs.length-1,S.cur+1);}
-  else if(a==='prev'){S.cur=Math.max(0,S.cur-1);}
+  else if(a==='check'){
+    if(complete(q,qs)){
+      pauseTimer(qs); /* capture timeUsed at submission */
+      qs.submitted=true;
+    }
+  }
+  else if(a==='next'){
+    if(S.mode==='review'){
+      var pos=S.missedQueue.indexOf(S.cur);
+      if(pos<S.missedQueue.length-1)S.cur=S.missedQueue[pos+1];
+    }else{
+      S.cur=Math.min(Qs.length-1,S.cur+1);
+    }
+  }
+  else if(a==='prev'){
+    if(S.mode==='review'){
+      var pos=S.missedQueue.indexOf(S.cur);
+      if(pos>0)S.cur=S.missedQueue[pos-1];
+    }else{
+      S.cur=Math.max(0,S.cur-1);
+    }
+  }
   else if(a==='finish'){S.done=true;}
-  else if(a==='restart'){S.cur=0;S.done=false;S.qs=initQS();}
+  else if(a==='review'){
+    /* Build queue of question indexes the user got wrong (or timed out on) */
+    S.missedQueue=Qs.map(function(_,i){return i;}).filter(function(i){
+      return S.qs[i].submitted&&!correct(Qs[i],S.qs[i]);
+    });
+    if(S.missedQueue.length>0){
+      S.mode='review';
+      S.done=false;
+      S.cur=S.missedQueue[0];
+    }
+  }
+  else if(a==='doneReview'){
+    S.mode='normal';
+    S.done=true;
+  }
+  else if(a==='restart'){
+    S.cur=0;S.done=false;S.qs=initQS();
+    S.mode='normal';S.missedQueue=[];
+  }
 
   render();
 });
