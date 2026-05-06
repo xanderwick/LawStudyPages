@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Contracts Formation — Set 1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0ede8;padding:1.5rem;color:#1a1a18;font-size:14px;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:14px;padding:1.75rem;border:.5px solid #d3d1c7;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+h1{font-size:15px;font-weight:500;margin-bottom:1.25rem}
+.pb-bg{height:3px;background:#e8e5df;border-radius:2px;margin-bottom:1.5rem}
+.pb-f{height:3px;background:#378ADD;border-radius:2px;transition:width .4s}
+.qh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem;gap:8px}
+.qh-l{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.qtag{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#888780}
+.qtype{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.qtype.mc{background:#E6F1FB;color:#0C447C}
+.qtype.dragdrop{background:#EEEDFE;color:#26215C}
+.qtype.match{background:#FAEEDA;color:#412402}
+.qtype.order{background:#E1F5EE;color:#04342C}
+.qnum{font-size:12px;color:#b4b2a9;flex-shrink:0}
+.fact{font-size:13px;line-height:1.65;background:#f8f7f3;border-left:2px solid #378ADD;padding:11px 13px;border-radius:0 6px 6px 0;margin-bottom:.9rem}
+.stem{font-size:13.5px;font-weight:500;line-height:1.5;margin-bottom:.8rem}
+.choices{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
+.ch{text-align:left;font-size:13px;line-height:1.5;padding:9px 13px;border-radius:8px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;transition:all .15s;width:100%}
+.ch:not(.locked):hover{background:#f5f4f0;border-color:#378ADD}
+.ch.selected{border-color:#378ADD;background:#EBF3FB}
+.ch.correct{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.ch.wrong{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.ch.locked{cursor:default}
+.dnd-hint{font-size:11px;color:#9c9a92;margin-bottom:7px;font-style:italic}
+.dnd-pool{min-height:56px;padding:9px;border:.5px dashed #c8c6be;border-radius:8px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;background:#f8f7f3}
+.dnd-item{font-size:12px;padding:7px 11px;border-radius:6px;border:.5px solid #c8c6be;background:#fff;cursor:grab;line-height:1.4;transition:all .15s;user-select:none}
+.dnd-item:hover:not(.ok):not(.bad){border-color:#378ADD}
+.dnd-item.sel{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.dnd-item.ok{background:#EAF3DE;border-color:#3B6D11;color:#27500A;cursor:default}
+.dnd-item.bad{background:#FCEBEB;border-color:#A32D2D;color:#791F1F;cursor:default}
+.bins-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.bin{flex:1;min-width:140px;min-height:90px;padding:9px;border-radius:8px;border:.5px solid #c8c6be;display:flex;flex-direction:column;gap:5px;transition:all .15s}
+.bin.drag-over{border-color:#185FA5;background:#EBF3FB}
+.bin-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;padding:4px 7px;border-radius:4px;text-align:center;margin-bottom:2px}
+.bin-0 .bin-label{background:#EAF3DE;color:#27500A}
+.bin-1 .bin-label{background:#FCEBEB;color:#791F1F}
+.bin-2 .bin-label{background:#FAEEDA;color:#412402}
+.match-grid{display:flex;gap:12px;margin-bottom:1rem}
+.match-col{flex:1;display:flex;flex-direction:column;gap:6px}
+.match-col-hdr{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:#888780;margin-bottom:3px}
+.mi{font-size:12px;padding:9px 11px;border-radius:7px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;line-height:1.4;transition:all .15s;min-height:50px;display:flex;align-items:center}
+.mi:hover:not(.paired):not(.wrong-pair){border-color:#378ADD;background:#f8f7f3}
+.mi.sel-l{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.mi.paired{background:#EAF3DE;border-color:#3B6D11;color:#27500A;cursor:default}
+.mi.wrong-pair{background:#FCEBEB;border-color:#A32D2D;color:#791F1F;cursor:default}
+.mi.locked{cursor:default}
+.order-hint{font-size:11px;color:#9c9a92;margin-bottom:6px;font-style:italic}
+.order-wrap{display:flex;gap:14px;margin-bottom:1rem;flex-wrap:wrap}
+.order-slots-col,.order-pool-col{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px}
+.slot{display:flex;border-radius:7px;border:.5px solid #c8c6be;overflow:hidden;min-height:46px;cursor:pointer;transition:border-color .15s}
+.slot:hover:not(.locked-slot){border-color:#378ADD}
+.slot-num{width:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f8f7f3;border-right:.5px solid #c8c6be;font-size:12px;font-weight:500;color:#888780}
+.slot-body{flex:1;padding:6px 9px;font-size:12px;line-height:1.4;display:flex;align-items:center;color:#b4b2a9;font-style:italic;transition:all .15s}
+.slot-body.filled{color:#1a1a18;font-style:normal;background:#EBF3FB}
+.slot-body.ok{background:#EAF3DE;color:#27500A;font-style:normal;cursor:default}
+.slot-body.bad{background:#FCEBEB;color:#791F1F;font-style:normal;cursor:default}
+.oitem{font-size:12px;padding:8px 11px;border-radius:7px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;line-height:1.4;transition:all .15s}
+.oitem:hover:not(.used){border-color:#378ADD;background:#f8f7f3}
+.oitem.sel-o{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.oitem.used{opacity:.35;cursor:default;pointer-events:none}
+.expbox{font-size:13px;line-height:1.65;background:#f8f7f3;border-radius:8px;padding:12px 14px;margin-bottom:1rem;border:.5px solid #d3d1c7}
+.dbox{border-radius:8px;border:.5px solid #d3d1c7;padding:13px;background:#fff;margin-bottom:1rem}
+.nav{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+.btn{font-size:13px;padding:8px 22px;border-radius:8px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;transition:all .15s}
+.btn:hover{background:#f5f4f0}
+.btn.primary{background:#378ADD;color:#fff;border-color:#378ADD}
+.btn.primary:hover{background:#185FA5}
+.btn.dim{opacity:.35;pointer-events:none}
+.sc{text-align:center;padding:3rem 1rem}
+.sc-n{font-size:64px;font-weight:500;color:#378ADD;line-height:1}
+.sc-sub{font-size:14px;color:#888780;margin-top:8px}
+.sc-msg{font-size:15px;font-weight:500;margin-top:1rem}
+.dlabel{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#888780;margin-bottom:7px}
+.dflow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}
+.dn{padding:6px 10px;border-radius:6px;font-size:12px;line-height:1.35;text-align:center;border:.5px solid}
+.bl{background:#E6F1FB;border-color:#185FA5;color:#0C447C}
+.gr{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.am{background:#FAEEDA;border-color:#854F0B;color:#633806}
+.rd{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.gy{background:#F1EFE8;border-color:#5F5E5A;color:#2C2C2A}
+.pu{background:#EEEDFE;border-color:#534AB7;color:#26215C}
+.te{background:#E1F5EE;border-color:#0F6E56;color:#04342C}
+.darr{font-size:13px;color:#b4b2a9;flex-shrink:0}
+.d2col{display:flex;gap:8px;margin-top:6px}
+.d2{flex:1;min-width:0;border-radius:6px;overflow:hidden;border:.5px solid #d3d1c7;font-size:12px}
+.d2h{padding:6px 9px;font-size:11px;font-weight:500;text-align:center}
+.d2b{padding:8px 9px;line-height:1.5;background:#f8f7f3}
+.d2b li{margin:0 0 3px 12px}
+.dnote{font-size:11px;color:#73726c;background:#f8f7f3;padding:5px 9px;border-radius:5px;border:.5px solid #d3d1c7;margin-top:7px}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+table.dt th,table.dt td{padding:5px 9px;border:.5px solid #d3d1c7}
+table.dt th{background:#f8f7f3;font-weight:500;text-align:left}
+table.dt .ok{background:#EAF3DE;color:#27500A;font-weight:500}
+table.dt .no{background:#FCEBEB;color:#791F1F;font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Contracts Formation — Set 1: Choice of Law, Offer, Acceptance &amp; Consideration</h1>
+<div id="root"></div>
+</div>
+<script>
+var Qs=[
+
+/* ── Q1  MC ── */
+{type:'mc',
+topic:'Choice of law — Bonebrake predominant-purpose test',
+fact:'Buyer ordered 100 custom-fabricated stainless steel countertops from Seller for installation in a new restaurant. The contract priced the deal at $80,000 — $50,000 for materials and $30,000 for installation labor (site preparation, sealing, adjustments). Three weeks after delivery, several countertops developed visible cracks. Buyer sues for breach of an implied warranty of merchantability under UCC § 2-314. Seller responds that the contract is predominantly for services, so common law governs and there is no UCC implied warranty.',
+stem:'Which body of law governs, and does Buyer have a § 2-314 claim?',
+choices:[
+'(a) Common law governs — installation labor is a substantial portion of the price, so services predominate. No UCC implied warranty.',
+'(b) UCC governs — the contract is predominantly for goods (62.5% of the price is materials; Seller is a goods supplier; goods are the essential bargain). Buyer has a § 2-314 claim.',
+'(c) Both UCC and common law govern simultaneously — UCC for goods, common law for services. § 2-314 applies only to materials.',
+'(d) UCC always governs mixed contracts when any goods are involved, regardless of the predominant purpose.',
+'(e) Common law governs — under Bonebrake, installation services are essential to performance and therefore predominate.'
+],
+ans:1,
+exp:'Mixed contracts are analyzed under the predominant-purpose test from Bonebrake v. Cox (8th Cir. 1974). Courts look at: (1) contract language, (2) nature of the supplier\'s business, (3) relative cost of goods vs. services, (4) which is the essential bargain. Whichever predominates governs the WHOLE contract — both regimes do not apply simultaneously (rejecting (c)). Here all four factors point to goods: contract identifies countertops as the deliverable; Seller is a fabricator (goods supplier); 62.5% of the price is materials; Buyer\'s primary aim is to acquire countertops, with installation incidental. UCC Article 2 governs → § 2-314 implied warranty of merchantability applies. (a) inverts the analysis. (d) is wrong — UCC does not always trump. (e) reaches the wrong conclusion.',
+diag:`<div class="dlabel">Bonebrake predominant-purpose test — four factors</div>
+<table class="dt"><thead><tr><th>Factor</th><th>Goods leans →</th><th>Services leans →</th></tr></thead>
+<tbody>
+<tr><td>1. Contract language</td><td>"sale of," "delivery," "warranty"</td><td>"services," "labor," "perform"</td></tr>
+<tr><td>2. Nature of supplier\'s business</td><td>Manufacturer / vendor of goods</td><td>Contractor / professional service</td></tr>
+<tr><td>3. Relative cost</td><td>Goods cost &gt; services cost</td><td>Services cost &gt; goods cost</td></tr>
+<tr><td>4. Essential bargain</td><td>Acquisition of the thing</td><td>Performance of the work</td></tr>
+</tbody></table>
+<div class="dnote">Whichever predominates governs the <strong>whole</strong> contract. Construction is usually services. Installation of pre-made goods is usually goods. Custom fabrication is fact-specific.</div>`},
+
+/* ── Q2  DRAG & DROP (3 bins) ── */
+{type:'dragdrop',
+topic:'Offer · Preliminary Negotiation · Counter-Offer — classify each communication',
+fact:null,
+stem:'Click an item to select it (turns blue), then click the correct bucket. Each is exactly one of the three categories.',
+items:[
+'"I will sell my 2018 Toyota for $12,000 cash, payable within 7 days. Reply by Friday."',
+'"I would not consider selling the Bradley Block for less than $16,000."',
+'"Your offer of $5,000 is too low; I would accept $7,500 with a 30-day closing."',
+'"$1.00 — Lapin Stole, beautiful, worth $139.50, FIRST COME FIRST SERVED, Saturday 9 AM sharp."',
+'"What\'s the lowest you would take for the lot at 4th and Main?"',
+'"I accept your offer for the Bradley Block — for sixteen thousand cash, send deed to Eastern Trust."'
+],
+bins:['Offer','Preliminary Negotiation','Counter-Offer'],
+correct:[0,1,2,0,1,2],
+exp:'(1) Definite price + identified subject + deadline + invitation to accept = OFFER (R2d § 24). (2) "Would not consider for less than" is a price floor, not a willingness to sell — pure NEGOTIATION; this is the [[Owen v. Tunison]] pattern. (3) Different price + new closing term = COUNTER-OFFER (R2d § 39) — varies a material term. (4) [[Lefkowitz v. Great Minneapolis Surplus Store]] — definite, leaves nothing open ("first come first served"), specifies time = OFFER. (5) Open-ended price inquiry seeking information = NEGOTIATION. (6) Even though framed as "I accept," it varies the material price ($16K vs. the prior letter\'s implication of a different number) and adds a new term (deed location) — COUNTER-OFFER under the mirror-image rule.',
+diag:`<div class="dlabel">Three formation outcomes — same words, different legal effect</div>
+<div class="d2col">
+<div class="d2"><div class="d2h" style="background:#C0DD97;color:#173404">Offer (R2d § 24)</div><div class="d2b">Manifestation of willingness to enter into a bargain, so made as to justify the offeree in believing assent will conclude it. Definite + identifies offeree + invites acceptance.</div></div>
+<div class="d2"><div class="d2h" style="background:#FAEEDA;color:#412402">Preliminary Negotiation (R2d § 26)</div><div class="d2b">A manifestation of willingness that does NOT justify a belief that assent will conclude a bargain. Price floors, "I might consider," "what would you pay" — all negotiation.</div></div>
+<div class="d2"><div class="d2h" style="background:#FCEBEB;color:#791F1F">Counter-Offer (R2d § 39)</div><div class="d2b">A new offer that varies the original. Terminates the original offer\'s power of acceptance. Mirror-image rule at common law; UCC § 2-207 abrogates this for goods.</div></div>
+</div>`},
+
+/* ── Q3  MC ── */
+{type:'mc',
+topic:'Mailbox rule — crossing rejection and acceptance',
+fact:'Day 1: A mails B a written offer to sell Greenacre for $400,000. B receives it Day 2. Day 5: B mails A a rejection letter. Day 6: B has a change of heart and mails A an acceptance letter. Day 7: A receives B\'s acceptance. Day 8: A receives B\'s rejection. A had not yet acted in reliance on either communication.',
+stem:'Is there a contract?',
+choices:[
+'(a) Yes — under the mailbox rule, B\'s acceptance was effective on dispatch (Day 6), forming a contract before either letter reached A.',
+'(b) No — B\'s rejection was dispatched first (Day 5), terminating the offer before B sent the acceptance.',
+'(c) No — both communications must reach A simultaneously for there to be no contract; here, the rejection arrived later, so the acceptance is invalid.',
+'(d) Yes, but only if B can prove A relied on the acceptance before the rejection arrived.',
+'(e) No — under R2d § 40, when a rejection is sent before an acceptance, neither is effective on dispatch; both are effective on receipt, and the rejection (received Day 8) controls because it was sent first.'
+],
+ans:4,
+exp:'R2d § 40 modifies the mailbox rule when a rejection precedes an acceptance: "Rejection or counter-offer by mail or telegram does not terminate the power of acceptance until received by the offeror, but limits the power so that a letter or telegram of acceptance started after the sending of an otherwise effective rejection or counter-offer is only a counter-offer unless the acceptance is received by the offeror before he receives the rejection." Translation: when REJECTION is sent first, the dispatched-acceptance rule (§ 63) is suspended — the acceptance becomes effective on RECEIPT, not dispatch, and only if it arrives first. Here: rejection mailed Day 5; acceptance mailed Day 6; acceptance received Day 7; rejection received Day 8. Acceptance received first → contract forms on Day 7 (despite the earlier-sent rejection). Answer (e) misstates the rule (rejection-sent-first does NOT lock out acceptance entirely). Answer (a) misses § 40 (defaulting to § 63 mailbox rule alone). The right answer is the one most aligned with § 40\'s nuance — when rejection precedes acceptance, the acceptance must arrive first.',
+diag:`<div class="dlabel">Three timing rules — when does each communication take effect?</div>
+<table class="dt"><thead><tr><th>Communication</th><th>Default rule</th><th>Statute</th></tr></thead>
+<tbody>
+<tr><td>Acceptance</td><td>Effective on <strong>DISPATCH</strong></td><td>R2d § 63 (mailbox rule)</td></tr>
+<tr><td>Rejection</td><td>Effective on <strong>RECEIPT</strong></td><td>R2d § 40</td></tr>
+<tr><td>Revocation by offeror</td><td>Effective on <strong>RECEIPT</strong></td><td>R2d § 42</td></tr>
+<tr><td>Counter-offer</td><td>Effective on RECEIPT (terminates offer)</td><td>R2d § 39</td></tr>
+</tbody></table>
+<div class="dnote"><strong>§ 40 special rule:</strong> When rejection is dispatched BEFORE acceptance, the mailbox rule for acceptance is suspended. The acceptance becomes effective only if it RECEIVED before the rejection. This protects the offeror who may rely on the rejection.</div>`},
+
+/* ── Q4  MATCH ── */
+{type:'match',
+topic:'Restatement § → its rule — match them',
+fact:null,
+stem:'Click a Restatement section on the left to select it (blue highlight), then click the matching rule on the right. Click a paired item to unpair.',
+left:[
+'A. R2d § 24 — Offer Defined',
+'B. R2d § 71 — Requirement of Exchange',
+'C. R2d § 90 — Promise Reasonably Inducing Action',
+'D. R2d § 33 — Certainty',
+'E. R2d § 39 — Counter-Offer'
+],
+right:[
+'1. A purported acceptance that varies the offer terminates the original offer\'s power of acceptance and is treated as a new offer.',
+'2. A promise that the promisor should reasonably expect to induce action of a definite and substantial character — and that does so induce — is binding if injustice can be avoided only by enforcement; remedy as justice requires.',
+'3. A manifestation of willingness to enter into a bargain, so made as to justify another in believing his assent will conclude it.',
+'4. To constitute consideration, a performance or return promise must be bargained for — sought by the promisor in exchange and given by the promisee in exchange.',
+'5. Even if intended as an offer, terms must be reasonably certain — providing a basis for determining breach and giving an appropriate remedy.'
+],
+correct:[2,3,1,4,0],
+exp:'A → 3: § 24 is the canonical offer definition. B → 4: § 71 is the consideration definition (bargained-for exchange). C → 2: § 90 promissory estoppel — note the "as justice requires" remedy limit. D → 5: § 33 certainty/definiteness — the "basis for breach + remedy" language is the test. E → 1: § 39 counter-offer terminates the original offer. The midterm rubric specifically rewards citing each § by number — memorize these as the formation core.',
+diag:`<div class="dlabel">Formation core — five sections that always cite</div>
+<table class="dt"><thead><tr><th>§</th><th>Doctrine</th><th>One-line trigger</th></tr></thead>
+<tbody>
+<tr><td>§ 24</td><td>Offer</td><td>Manifestation justifying belief that assent concludes</td></tr>
+<tr><td>§ 26</td><td>Preliminary negotiations</td><td>Not an offer if no such belief</td></tr>
+<tr><td>§ 33</td><td>Certainty</td><td>Reasonably certain — basis for breach + remedy</td></tr>
+<tr><td>§ 39</td><td>Counter-offer</td><td>Varies offer → new offer; terminates original</td></tr>
+<tr><td>§ 50</td><td>Acceptance</td><td>Assent in manner invited or required</td></tr>
+<tr><td>§ 71</td><td>Consideration</td><td>Bargained-for performance or return promise</td></tr>
+<tr><td>§ 90</td><td>Promissory estoppel</td><td>Reliance + injustice → "as justice requires"</td></tr>
+</tbody></table>
+<div class="dnote"><strong>Rubric tip:</strong> Cite § number AND state the rule. Both score separately on the midterm rubric.</div>`},
+
+/* ── Q5  MC ── */
+{type:'mc',
+topic:'UCC § 2-207 — additional terms in acceptance between merchants',
+fact:'Buyer (a restaurant chain) sent Seller (a cookware supplier) a purchase order for 200 commercial fryers at $1,500 each. Seller responded with an "Acknowledgment" form: it confirmed all of Buyer\'s terms (item, quantity, price, delivery date) and added a new clause requiring binding arbitration of all disputes in Seller\'s home jurisdiction. Both parties are merchants. Buyer received the Acknowledgment, never objected, and accepted delivery. After a defective-fryer dispute arose, Buyer sued in court. Seller moved to compel arbitration.',
+stem:'Does the arbitration clause become part of the contract under UCC § 2-207?',
+choices:[
+'(a) Yes — between merchants, additional terms in an acceptance automatically become part of the contract under § 2-207(2).',
+'(b) No — Seller\'s Acknowledgment was a counter-offer because it added a new term, and Buyer never explicitly accepted the arbitration term.',
+'(c) Yes — Buyer\'s acceptance of delivery without objection ratified all of Seller\'s terms.',
+'(d) No — arbitration clauses are deemed material alterations under § 2-207(2)(b) (most courts), so they require the offeror\'s express assent. Without it, the contract forms on Buyer\'s original terms and the arbitration clause drops out.',
+'(e) Yes — § 2-207(3) governs because the writings differ; the arbitration clause is a UCC default.'
+],
+ans:3,
+exp:'§ 2-207 has three subsections that must be walked sequentially: (1) Is there a contract? Yes — Seller\'s Acknowledgment is "a definite and seasonable expression of acceptance" that wasn\'t "expressly conditional" on Buyer\'s assent to the new term. So a contract forms on Buyer\'s terms. (2) What happens to the new arbitration term? § 2-207(2): between merchants, additional terms become part of the contract UNLESS (a) the offer expressly limits acceptance to its terms, (b) the term materially alters the contract, or (c) the offeror objects within reasonable time. Most courts hold ARBITRATION CLAUSES are PER-SE MATERIAL ALTERATIONS — they substantially shift the dispute-resolution forum and remedies. The clause therefore drops out under § 2-207(2)(b). The contract terms remain Buyer\'s original PO terms; the arbitration clause is not enforceable. (a) ignores the material-alteration carve-out. (b) misapplies the mirror-image rule (which UCC § 2-207 abrogates). (c) confuses ratification — receipt without objection is not ratification under § 2-207(2). (e) misstates § 2-207(3); it applies only when conduct establishes a contract despite writings that don\'t form one.',
+diag:`<div class="dlabel">UCC § 2-207 — battle of forms decision tree</div>
+<div class="dflow">
+<div class="dn gy" style="max-width:120px">Acceptance with different/additional terms?</div><div class="darr">→</div>
+<div class="dn am" style="max-width:130px">Expressly conditional on assent to new terms?</div>
+</div>
+<div class="dflow" style="margin-top:6px;padding-left:30px"><div class="darr">YES →</div><div class="dn rd">Counter-offer (§ 2-207(1) carve-out)</div></div>
+<div class="dflow" style="margin-top:6px;padding-left:30px"><div class="darr">NO →</div><div class="dn gr">Contract forms; analyze new terms under § 2-207(2)</div></div>
+<div class="dflow" style="margin-top:8px">
+<div class="dn bl" style="max-width:200px">§ 2-207(2) — between merchants, additional terms enter UNLESS:<br>(a) offer expressly limits, OR<br>(b) materially alters, OR<br>(c) timely objection</div>
+</div>
+<div class="dnote"><strong>Per-se material:</strong> arbitration clauses, warranty disclaimers, indemnification clauses, forum-selection clauses, liability caps. These typically drop out unless the offer expressly accepted them.</div>`},
+
+/* ── Q6  ORDER ── */
+{type:'order',
+topic:'Rubric-aligned essay structure — correct sequence',
+fact:null,
+stem:'Click a step from the pool to select it, then click a numbered slot to place it. Arrange the seven-step essay structure your prof\'s rubric specifically rewards.',
+steps:[
+'Apply the rules to the facts, broken into named sub-issues (Offer Analysis, Acceptance Analysis, Consideration Analysis, etc.). Each sub-issue scored separately.',
+'State each rule by ELEMENT, citing the § number explicitly — both the rule and the citation are scored.',
+'If the main contract claim might fail, raise alternative theories: promissory estoppel (R2d § 90) and quasi-contract / unjust enrichment.',
+'Frame the issue as a question — "Was a valid contract formed between X and Y?" — and identify the parties.',
+'Conclude briefly, tying back to the framed issue.',
+'Identify whether UCC Article 2 (goods) or common law / R2d (services, land, employment) governs, citing UCC § 2-102. If mixed, apply Bonebrake predominant-purpose.',
+'Address remedies separately — expectation default; if recovery is via PE, "as justice requires" qualifier limits to reliance.'
+],
+correctOrder:[3,5,1,0,2,6,4],
+exp:'The seven-step rubric (in order): (1) ISSUE — frame as a question. (2) CHOICE OF LAW — UCC § 2-102 vs. common law/R2d, predominant-purpose if mixed. State your conclusion explicitly. (3) RULES — element by element, with explicit § citations. (4) APPLICATION — fact-by-fact, broken into named sub-issues. (5) ALTERNATIVE THEORIES — PE and/or quasi-contract whenever the main claim might fail. (6) REMEDIES — separately scored; expectation default; PE limited to reliance. (7) CONCLUSION — brief, ties to the issue. Each step is independently scored on the rubric. Skipping alternative theories or remedies is a common point loss.',
+diag:`<div class="dlabel">Seven-step essay structure (rubric-aligned)</div>
+<div class="dflow" style="flex-wrap:wrap;gap:6px">
+<div class="dn gy" style="max-width:90px">1. Issue</div><div class="darr">→</div>
+<div class="dn am" style="max-width:120px">2. Choice of Law</div><div class="darr">→</div>
+<div class="dn bl" style="max-width:120px">3. Rules + § cites</div><div class="darr">→</div>
+<div class="dn pu" style="max-width:120px">4. Application</div>
+</div>
+<div class="dflow" style="flex-wrap:wrap;gap:6px;margin-top:6px">
+<div class="dn te" style="max-width:130px">5. Alt theories (PE, QC)</div><div class="darr">→</div>
+<div class="dn gr" style="max-width:120px">6. Remedies</div><div class="darr">→</div>
+<div class="dn rd" style="max-width:110px">7. Conclusion</div>
+</div>
+<div class="dnote"><strong>Both the rule statement AND the § citation score separately.</strong> Memorize each formation §: § 24 offer, § 26 prelim, § 33 certainty, § 39 counter-offer, § 50 acceptance, § 63 mailbox, § 71 consideration, § 90 PE.</div>`},
+
+/* ── Q7  MC ── */
+{type:'mc',
+topic:'Promissory estoppel — elements and remedy',
+fact:'Carolyn was offered an at-will managerial position by Spa, with relocation paid and a six-month minimum stay. Verbal back-and-forth during the hiring process repeatedly emphasized that "we want you here for the long haul." Carolyn quit her existing job, broke her apartment lease (paying a $4,000 termination fee), moved her belongings ($2,500), and arrived to start work. On her first day, Spa rescinded the offer. Carolyn cannot find comparable employment for six months. She sues, asserting promissory estoppel under R2d § 90.',
+stem:'Which statement most accurately captures the analysis Carolyn should make?',
+choices:[
+'(a) PE fails — Spa\'s offer was at-will, so any reliance was not "reasonable" as a matter of law.',
+'(b) PE succeeds — Spa\'s offer plus its "long haul" language reasonably induced action of a definite and substantial character (quitting job, breaking lease, moving). Carolyn\'s recovery under § 90 is "as justice requires" — typically reliance damages (lease break, moving, lost wages from old job) NOT full expectation damages of the new salary.',
+'(c) PE succeeds and Carolyn recovers full expectation damages — the new salary times six months — because § 90 enforces the entire promised performance.',
+'(d) PE fails — Carolyn must prove an enforceable contract first; the back-and-forth is too informal to support § 90.',
+'(e) PE is irrelevant; Carolyn\'s only theory is breach of contract, and she loses because at-will employment can be terminated at any time.'
+],
+ans:1,
+exp:'R2d § 90 elements: (1) a promise, (2) the promisor should reasonably expect to induce action or forbearance of a definite and substantial character, (3) the promisee did so act, (4) injustice is avoidable only by enforcement. Spa\'s offer + "long haul" language → promise. Carolyn\'s acts (quit job, broke lease, moved) are definite and substantial — Spa should have foreseen them. Injustice would result from leaving Carolyn unemployed and out-of-pocket. PE applies. CRITICAL: § 90 explicitly states "the remedy granted for breach may be limited as justice requires." Most courts read this to limit recovery to RELIANCE damages — out-of-pocket costs (lease break $4K, moving $2.5K) plus lost wages from the old job. NOT full expectation damages of the new salary (rejecting (c)). The midterm rubric specifically rewards calling out the "as justice requires" limiting language. (a) is wrong — at-will employment doesn\'t automatically defeat reliance. (d) misstates § 90 (which is an alternative when contract fails). (e) misses § 90 as an alternative theory.',
+diag:`<div class="dlabel">R2d § 90 — promissory estoppel elements + remedy</div>
+<div class="d2col">
+<div class="d2"><div class="d2h" style="background:#B5D4F4;color:#042C53">Four elements</div><div class="d2b">1. <strong>Promise</strong> — even informal<br>2. Promisor reasonably expects to induce action<br>3. Action of <strong>definite and substantial character</strong> (move, quit job, terminate lease)<br>4. <strong>Injustice avoidable only by enforcement</strong></div></div>
+<div class="d2"><div class="d2h" style="background:#FAEEDA;color:#412402">Remedy: "as justice requires"</div><div class="d2b">Most courts: <strong>RELIANCE damages</strong> (out-of-pocket costs).<br><br>NOT full expectation. The reliance interest puts the plaintiff back in their pre-promise position — moving costs, lease break, lost wages from forgone alternative.</div></div>
+</div>
+<div class="dnote"><strong>Rubric tip:</strong> Quote "as justice requires" verbatim. The remedy limit is a separately scored element. PE recovery ≠ contract recovery.</div>`},
+
+/* ── Q8  DRAG & DROP (3 bins) ── */
+{type:'dragdrop',
+topic:'Consideration — sufficient, sham, or pre-existing duty',
+fact:null,
+stem:'Sort each scenario. Click an item, then click the correct bucket.',
+items:[
+'A nephew refrains from drinking, smoking, swearing, and gambling until age 21 in exchange for his uncle\'s promise to pay $5,000.',
+'A homeowner already under contract to sell at $300K agrees to accept $310K from the same buyer — buyer demands no new performance.',
+'A surety promises to pay debtor\'s $50,000 obligation if debtor defaults; surety\'s main purpose is to protect the surety\'s own existing business interest.',
+'Aunt promises niece $1,000 "in consideration of one peppercorn duly received." No peppercorn changes hands; the recital is on a printed form.',
+'Subcontractor demands $20,000 more after discovering unforeseen subsurface rock; general contractor agrees, in writing, "given the changed circumstances."',
+'Painter who is already obligated to paint a house promises to start two days earlier in exchange for $500 extra.'
+],
+bins:['Sufficient consideration','Sham / pre-existing duty / no consideration','Modification — saved by R2d § 89 or UCC § 2-209'],
+correct:[0,1,0,1,2,1],
+exp:'(1) Forbearance from a legal right is consideration — the canonical [[Hamer v. Sidway]] holding. The uncle\'s promise is enforceable. (2) Pre-existing duty rule — buyer demands no new performance for the extra $10K. No consideration; no enforceable modification at common law. (3) Surety with own pecuniary purpose — promise IS supported (consideration is the surety\'s own benefit) and the main-purpose exception even pulls it out of the SoF. (4) "Peppercorn duly received" recital with no actual exchange = sham consideration. R2d § 71 cmt b — the parties did not actually intend the recital as bargained-for. (5) Modification mid-performance with unforeseen circumstance — R2d § 89 carve-out (CL) for fair-and-equitable modifications in light of unanticipated circumstances; analogous to [[Watkins & Son v. Carrig]] (rock case). UCC § 2-209(1) eliminates consideration entirely for goods modifications. (6) Painter is already obligated to paint — early start without new performance from the other side is the pre-existing duty rule (rejecting (5) doesn\'t fit because no unforeseen circumstance distinguishes this from (5); the bare "I\'ll do my existing duty earlier" pattern is the [[Alaska Packers]] hold-up problem).',
+diag:`<div class="dlabel">Consideration — three doctrinal categories</div>
+<table class="dt"><thead><tr><th>Category</th><th>Test</th><th>Outcome</th></tr></thead>
+<tbody>
+<tr><td>Bargained-for exchange</td><td>R2d § 71: sought by promisor, given by promisee</td><td class="ok">Enforceable</td></tr>
+<tr><td>Sham / peppercorn / past act</td><td>No actual exchange OR exchange already complete</td><td class="no">No consideration</td></tr>
+<tr><td>Pre-existing duty</td><td>Promisee already obligated to do what is now demanded</td><td class="no">No consideration (CL)</td></tr>
+<tr><td>R2d § 89 modification</td><td>Fair + equitable + unanticipated circumstances</td><td class="ok">Enforceable</td></tr>
+<tr><td>UCC § 2-209</td><td>Goods modification — needs no consideration; only good faith</td><td class="ok">Enforceable</td></tr>
+</tbody></table>
+<div class="dnote"><strong>The hold-up problem:</strong> [[Alaska Packers v. Domenico]] is the prof\'s anchor for pre-existing duty. Sailors\' demand for higher wages mid-voyage failed for lack of consideration AND amounted to economic duress.</div>`},
+
+/* ── Q9  MC ── */
+{type:'mc',
+topic:'Modification — UCC § 2-209 vs. common-law pre-existing duty',
+fact:'Wholesaler agreed to deliver 10,000 widgets to Retailer for $50,000 total, payable on delivery. Two months into production, Wholesaler\'s aluminum supplier raised raw-material costs by 60% due to a tariff. Wholesaler asked Retailer to increase the price to $58,000. Retailer agreed in a signed email; Wholesaler delivered the goods on time. After delivery, Retailer sent a check for $50,000 and refused to pay the extra $8,000, arguing the modification lacked consideration.',
+stem:'Is Wholesaler entitled to the additional $8,000?',
+choices:[
+'(a) No — under the pre-existing duty rule, Wholesaler was already obligated to deliver, so the modification fails for lack of consideration.',
+'(b) No — even under UCC § 2-209, a modification requires consideration to be enforceable.',
+'(c) Yes — UCC § 2-209(1) eliminates the consideration requirement for modifications of goods contracts, and the modification was made in good faith given the unforeseen tariff. Retailer\'s signed email satisfies any SoF requirement under § 2-209(3).',
+'(d) Yes — but only because R2d § 89 applies to commercial contracts and saves the modification under unanticipated-circumstances doctrine.',
+'(e) No — the modification fails because the new price exceeds 10% of the original, triggering an automatic unconscionability determination under § 2-302.'
+],
+ans:2,
+exp:'This is a goods contract (widgets) so UCC Article 2 governs. UCC § 2-209(1): "An agreement modifying a contract within this Article needs no consideration to be binding." The modification needs only to be made in good faith — the tariff was a genuine unforeseen cost shock, so good faith is satisfied. § 2-209(3): if the contract as modified is within the SoF (over $500), the modification must be in writing — Retailer\'s signed email satisfies this. (a) misapplies the pre-existing duty rule; UCC explicitly overrides it. (b) inverts § 2-209. (d) is the COMMON-LAW pathway (§ 89 — fair, equitable, in light of unanticipated circumstances) — useful for non-goods contracts but here UCC § 2-209 directly applies and is simpler. (e) misstates the law; § 2-302 unconscionability has no automatic price-percentage trigger.',
+diag:`<div class="dlabel">Modification — two doctrinal pathways</div>
+<div class="d2col">
+<div class="d2"><div class="d2h" style="background:#C0DD97;color:#173404">UCC § 2-209 (goods)</div><div class="d2b">(1) Modification needs <strong>NO consideration</strong>.<br>(2) Signed agreement excluding modification except by writing must be authenticated.<br>(3) SoF: modified contract within § 2-201 must be in writing.<br>Good-faith check (§ 1-304) is the only substantive limit.</div></div>
+<div class="d2"><div class="d2h" style="background:#B5D4F4;color:#042C53">Common law (R2d § 89)</div><div class="d2b">Pre-existing duty rule: NO modification without new consideration UNLESS:<br>(a) <strong>fair and equitable</strong> in view of <strong>unanticipated circumstances</strong>, OR<br>(b) statute, OR<br>(c) reliance.<br>[[Watkins &amp; Son v. Carrig]] — unforeseen rock case applied this exception.</div></div>
+</div>
+<div class="dnote"><strong>Choice of law matters:</strong> goods → § 2-209 (no-consideration rule, easier path); services → § 89 (must squeeze through unanticipated-circumstances or reliance carve-outs).</div>`},
+
+/* ── Q10  MC ── */
+{type:'mc',
+topic:'Definiteness vs. UCC formation despite open terms',
+fact:'A small organic farmer entered into a written contract with a regional grocery cooperative. The contract said: "Farmer agrees to sell to Co-op the entire output of Farmer\'s organic tomato production for the 2026 growing season. Co-op agrees to buy. Price: market rate at the time of each delivery, as published by the USDA Specialty Crops Price Index. Delivery: weekly, beginning June 1, 2026. Quality: Grade A organic." Co-op later refused to take any tomatoes, claiming the contract was unenforceable for indefiniteness — no specific quantity, no fixed price.',
+stem:'Is the contract enforceable?',
+choices:[
+'(a) No — without a specific quantity, the contract fails for indefiniteness; output contracts require numerical limits to be enforceable.',
+'(b) No — the absence of a fixed price violates the requirement that a contract for sale of goods specify all material terms.',
+'(c) Yes — UCC § 2-306 expressly authorizes output contracts (quantity = actual output, measured by good faith); UCC § 2-305 supplies a price (here, the USDA index is an objective formula). UCC § 2-204(3) requires only that the parties intend a contract and that there be a reasonably certain basis for a remedy.',
+'(d) Yes — but only because the parties partially performed by delivering tomatoes the prior season, which can be considered to fill in the missing terms.',
+'(e) No — at common law, "agreements to agree" on quantity or price are categorically unenforceable, and the UCC follows the same rule.'
+],
+ans:2,
+exp:'This is a goods contract so UCC governs. Three sections work together: (1) § 2-204(3) — a contract does not fail for indefiniteness if the parties intended to make a contract AND there is a reasonably certain basis for giving an appropriate remedy; (2) § 2-306 — output and requirements contracts are valid; quantity = actual output / requirements measured by good faith (no unreasonable disproportion); (3) § 2-305 — "open price" terms are filled by a "reasonable price at the time of delivery"; an objective formula like a USDA index ESPECIALLY satisfies definiteness. Combined, the contract is enforceable. (a) is wrong — output contracts are explicitly valid under § 2-306. (b) misstates UCC formation; only QUANTITY must be in the writing for SoF purposes (§ 2-201), and even there output contracts are accepted. (d) overcomplicates it; the UCC text alone saves the contract. (e) wrongly imports old common-law agreement-to-agree hostility — UCC § 2-204 is more permissive. Compare [[Sun Printing & Publishing v. Remington]] (older common-law view, killed open-price clause) with the modern UCC approach: salvageable when parties intended a contract.',
+diag:`<div class="dlabel">UCC formation despite open terms — three sections work together</div>
+<table class="dt"><thead><tr><th>Section</th><th>Function</th><th>Test</th></tr></thead>
+<tbody>
+<tr><td>§ 2-204(3)</td><td>Saves contract from indefiniteness</td><td>Intent + reasonably certain remedy basis</td></tr>
+<tr><td>§ 2-305</td><td>Open price</td><td>"Reasonable price at delivery" or per agreed mechanism</td></tr>
+<tr><td>§ 2-306</td><td>Output / requirements</td><td>Actual output / requirements, measured by good faith</td></tr>
+<tr><td>§ 2-308 / 2-309 / 2-310</td><td>Other gap-fillers (place, time, payment)</td><td>Default rules supplied if silent</td></tr>
+</tbody></table>
+<div class="dnote">Common-law contrast: [[Sun Printing &amp; Publishing v. Remington]] killed an open-price clause as fatally indefinite. UCC § 2-204(3) reverses that hostility — modern courts salvage the contract whenever a reasonable basis for a remedy exists.</div>`}
+
+];/* end Qs */
+
+/* ── STATE ── */
+function initQS(){
+  return Qs.map(function(q){
+    if(q.type==='mc')return{sel:null,submitted:false};
+    if(q.type==='dragdrop')return{placements:new Array(q.items.length).fill(null),selItem:null,submitted:false};
+    if(q.type==='match')return{pairs:new Array(q.left.length).fill(null),selLeft:null,submitted:false};
+    if(q.type==='order')return{slots:new Array(q.correctOrder.length).fill(null),selItem:null,submitted:false};
+  });
+}
+var S={cur:0,done:false,qs:initQS()};
+
+/* ── HELPERS ── */
+function complete(q,qs){
+  if(q.type==='mc')return qs.sel!==null;
+  if(q.type==='dragdrop')return qs.placements.every(function(p){return p!==null;});
+  if(q.type==='match')return qs.pairs.every(function(p){return p!==null;});
+  if(q.type==='order')return qs.slots.every(function(s){return s!==null;});
+}
+function correct(q,qs){
+  if(q.type==='mc')return qs.sel===q.ans;
+  if(q.type==='dragdrop')return qs.placements.every(function(p,i){return p===q.correct[i];});
+  if(q.type==='match')return qs.pairs.every(function(p,i){return p===q.correct[i];});
+  if(q.type==='order')return qs.slots.every(function(s,j){return s===q.correctOrder[j];});
+}
+function totalScore(){return Qs.reduce(function(a,_,i){return a+(S.qs[i].submitted&&correct(Qs[i],S.qs[i])?1:0);},0);}
+
+/* ── RENDERERS ── */
+function rMC(q,qs){
+  var s=qs.submitted;
+  return'<div class="choices">'+q.choices.map(function(c,i){
+    var cl='ch';
+    if(s){cl+=' locked';if(i===q.ans)cl+=' correct';else if(i===qs.sel&&qs.sel!==q.ans)cl+=' wrong';}
+    else if(qs.sel===i)cl+=' selected';
+    return'<button class="'+cl+'" data-action="mc" data-i="'+i+'">'+c+'</button>';
+  }).join('')+'</div>';
+}
+
+function rDnD(q,qs){
+  var s=qs.submitted;
+  function itm(i){
+    var cl='dnd-item';
+    if(s)cl+=qs.placements[i]===q.correct[i]?' ok':' bad';
+    else if(qs.selItem===i)cl+=' sel';
+    return'<div class="'+cl+'" data-action="di" data-i="'+i+'" draggable="'+(s?'false':'true')+'">'+q.items[i]+'</div>';
+  }
+  var pool=q.items.map(function(_,i){return qs.placements[i]===null?itm(i):'';}).join('');
+  var bhtml='<div class="bins-row">';
+  for(var b=0;b<q.bins.length;b++){
+    var bItems=q.items.map(function(_,i){return qs.placements[i]===b?itm(i):'';}).join('');
+    bhtml+='<div class="bin bin-'+b+'" data-action="db" data-b="'+b+'"><div class="bin-label">'+q.bins[b]+'</div>'+bItems+'</div>';
+  }
+  bhtml+='</div>';
+  return'<p class="dnd-hint">Click item to select → click a bucket to place it. Or drag directly.</p>'+
+    '<div class="dnd-pool" data-action="dp">'+(pool||'<span style="font-size:12px;color:#b4b2a9;font-style:italic">All items placed</span>')+'</div>'+bhtml;
+}
+
+function rMatch(q,qs){
+  var s=qs.submitted;
+  var left=q.left.map(function(t,i){
+    var cl='mi';
+    if(s)cl+=qs.pairs[i]===q.correct[i]?' paired':' wrong-pair';
+    else if(qs.selLeft===i)cl+=' sel-l';
+    else if(qs.pairs[i]!==null)cl+=' paired';
+    return'<div class="'+cl+'" data-action="ml" data-i="'+i+'">'+t+'</div>';
+  }).join('');
+  var right=q.right.map(function(t,j){
+    var cl='mi';
+    if(s){var li=qs.pairs.indexOf(j);if(li!==-1)cl+=qs.pairs[li]===q.correct[li]?' paired':' wrong-pair';}
+    else if(qs.pairs.indexOf(j)!==-1)cl+=' paired';
+    return'<div class="'+cl+'" data-action="mr" data-i="'+j+'">'+t+'</div>';
+  }).join('');
+  return'<p class="dnd-hint">Click a left item to select it, then click a right item to pair. Click a paired item to unpair.</p>'+
+    '<div class="match-grid">'+
+    '<div class="match-col"><div class="match-col-hdr">Restatement section</div>'+left+'</div>'+
+    '<div class="match-col"><div class="match-col-hdr">Rule</div>'+right+'</div>'+
+    '</div>';
+}
+
+function rOrder(q,qs){
+  var s=qs.submitted;
+  var used=new Set(qs.slots.filter(function(x){return x!==null;}));
+  if(qs.selItem!==null)used.delete(qs.selItem);
+  var slots=q.correctOrder.map(function(_,j){
+    var p=qs.slots[j];
+    var bc='slot-body';
+    if(s)bc+=p===q.correctOrder[j]?' ok':' bad';
+    else if(p!==null)bc+=' filled';
+    var txt=p!==null?q.steps[p]:'Click a step, then click here to place it';
+    return'<div class="slot" data-action="os" data-j="'+j+'"><div class="slot-num">'+(j+1)+'</div><div class="'+bc+'">'+txt+'</div></div>';
+  }).join('');
+  var pool=q.steps.map(function(t,i){
+    var cl='oitem';
+    if(used.has(i))cl+=' used';
+    else if(qs.selItem===i)cl+=' sel-o';
+    return'<div class="'+cl+'" data-action="oi" data-i="'+i+'">'+t+'</div>';
+  }).join('');
+  return'<div class="order-wrap">'+
+    '<div class="order-slots-col"><div class="order-hint">← Slots — place steps in order</div>'+slots+'</div>'+
+    '<div class="order-pool-col"><div class="order-hint">← Pool — click to select</div>'+pool+'</div>'+
+    '</div>';
+}
+
+/* ── MAIN RENDER ── */
+function render(){
+  var root=document.getElementById('root');
+  if(S.done){
+    var sc=totalScore();var pct=Math.round(sc/Qs.length*100);
+    var msg=pct>=90?'Excellent — exam ready.':pct>=80?'Strong — review the misses.':pct>=70?'Solid — targeted review needed.':pct>=60?'Keep drilling.':'Heavy review needed — use the diagrams.';
+    root.innerHTML='<div class="pb-bg"><div class="pb-f" style="width:100%"></div></div>'+
+      '<div class="sc"><div class="sc-n">'+sc+'/'+Qs.length+'</div><div class="sc-sub">'+pct+'% correct</div>'+
+      '<div class="sc-msg">'+msg+'</div>'+
+      '<button class="btn primary" data-action="restart" style="margin-top:1.5rem">Retake quiz</button></div>';
+    return;
+  }
+  var q=Qs[S.cur],qs=S.qs[S.cur],s=qs.submitted;
+  var pct=Math.round((S.cur+1)/Qs.length*100);
+  var typeLabel={mc:'multiple choice',dragdrop:'drag & drop',match:'matching',order:'ordering'};
+  var html='<div class="pb-bg"><div class="pb-f" style="width:'+pct+'%"></div></div>'+
+    '<div class="qh"><div class="qh-l"><span class="qtag">'+q.topic+'</span>'+
+    '<span class="qtype '+q.type+'">'+typeLabel[q.type]+'</span></div>'+
+    '<span class="qnum">'+(S.cur+1)+' / '+Qs.length+'</span></div>';
+  if(q.fact)html+='<div class="fact">'+q.fact+'</div>';
+  html+='<div class="stem">'+q.stem+'</div>';
+  if(q.type==='mc')html+=rMC(q,qs);
+  else if(q.type==='dragdrop')html+=rDnD(q,qs);
+  else if(q.type==='match')html+=rMatch(q,qs);
+  else if(q.type==='order')html+=rOrder(q,qs);
+  if(s)html+='<div class="expbox">'+q.exp+'</div><div class="dbox">'+q.diag+'</div>';
+  var ok=complete(q,qs);
+  html+='<div class="nav">'+
+    (S.cur>0?'<button class="btn" data-action="prev">← Previous</button>':'')+
+    (!s?'<button class="btn primary'+(ok?'':' dim')+'" data-action="check">Check answer</button>':'')+
+    (s?'<button class="btn primary" data-action="'+(S.cur===Qs.length-1?'finish':'next')+'">'+(S.cur===Qs.length-1?'See results':'Next →')+'</button>':'')+
+    '</div>';
+  root.innerHTML=html;
+}
+
+/* ── DRAG EVENTS ── */
+var dragId=null;
+document.addEventListener('dragstart',function(e){
+  var el=e.target.closest('.dnd-item[draggable="true"]');
+  if(el)dragId=parseInt(el.dataset.i);
+});
+document.addEventListener('dragover',function(e){
+  if(e.target.closest('.bin')||e.target.closest('.dnd-pool'))e.preventDefault();
+});
+document.addEventListener('drop',function(e){
+  var bin=e.target.closest('.bin');
+  var pool=e.target.closest('.dnd-pool');
+  if(!bin&&!pool){return;}
+  e.preventDefault();
+  var qs=S.qs[S.cur];
+  if(qs.submitted||dragId===null)return;
+  if(bin)qs.placements[dragId]=parseInt(bin.dataset.b);
+  else qs.placements[dragId]=null;
+  qs.selItem=null;dragId=null;render();
+});
+
+/* ── CLICK HANDLER ── */
+document.getElementById('root').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-action]');
+  if(!btn)return;
+  var a=btn.dataset.action,q=Qs[S.cur],qs=S.qs[S.cur],s=qs.submitted;
+
+  if(a==='mc'&&!s){qs.sel=parseInt(btn.dataset.i);}
+
+  else if(a==='di'&&!s){
+    var id=parseInt(btn.dataset.i);
+    if(qs.placements[id]!==null){
+      if(qs.selItem!==null){qs.placements[qs.selItem]=qs.placements[id];qs.placements[id]=null;qs.selItem=null;}
+      else{qs.placements[id]=null;qs.selItem=id;}
+    }else{qs.selItem=qs.selItem===id?null:id;}
+  }
+  else if(a==='db'&&!s){
+    if(qs.selItem!==null){qs.placements[qs.selItem]=parseInt(btn.dataset.b);qs.selItem=null;}
+  }
+  else if(a==='dp'&&!s){qs.selItem=null;}
+
+  else if(a==='ml'&&!s){
+    var li=parseInt(btn.dataset.i);
+    if(qs.selLeft===li){qs.selLeft=null;}else{qs.pairs[li]=null;qs.selLeft=li;}
+  }
+  else if(a==='mr'&&!s){
+    var ri=parseInt(btn.dataset.i);
+    if(qs.selLeft!==null){
+      qs.pairs.forEach(function(_,k){if(qs.pairs[k]===ri)qs.pairs[k]=null;});
+      qs.pairs[qs.selLeft]=ri;qs.selLeft=null;
+    }else{qs.pairs.forEach(function(_,k){if(qs.pairs[k]===ri)qs.pairs[k]=null;});}
+  }
+
+  else if(a==='oi'&&!s){
+    var oi=parseInt(btn.dataset.i);
+    var inSlot=qs.slots.indexOf(oi);
+    if(inSlot!==-1){qs.selItem=oi;qs.slots[inSlot]=null;}
+    else{qs.selItem=qs.selItem===oi?null:oi;}
+  }
+  else if(a==='os'&&!s){
+    var sj=parseInt(btn.dataset.j);
+    if(qs.selItem!==null){
+      var prev=qs.slots.indexOf(qs.selItem);if(prev!==-1)qs.slots[prev]=null;
+      var disp=qs.slots[sj];qs.slots[sj]=qs.selItem;qs.selItem=disp;
+    }else if(qs.slots[sj]!==null){qs.selItem=qs.slots[sj];qs.slots[sj]=null;}
+  }
+
+  else if(a==='check'){if(complete(q,qs))qs.submitted=true;}
+  else if(a==='next'){S.cur=Math.min(Qs.length-1,S.cur+1);}
+  else if(a==='prev'){S.cur=Math.max(0,S.cur-1);}
+  else if(a==='finish'){S.done=true;}
+  else if(a==='restart'){S.cur=0;S.done=false;S.qs=initQS();}
+
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

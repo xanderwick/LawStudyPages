@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Diversity Jurisdiction — Set 2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0ede8;padding:1.5rem;color:#1a1a18;font-size:14px;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:14px;padding:1.75rem;border:.5px solid #d3d1c7;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+h1{font-size:15px;font-weight:500;margin-bottom:1.25rem}
+.pb-bg{height:3px;background:#e8e5df;border-radius:2px;margin-bottom:1.5rem}
+.pb-f{height:3px;background:#378ADD;border-radius:2px;transition:width .4s}
+.qh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem;gap:8px}
+.qh-l{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.qtag{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#888780}
+.qtype{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.qtype.mc{background:#E6F1FB;color:#0C447C}
+.qtype.dragdrop{background:#EEEDFE;color:#26215C}
+.qtype.match{background:#FAEEDA;color:#412402}
+.qtype.order{background:#E1F5EE;color:#04342C}
+.qnum{font-size:12px;color:#b4b2a9;flex-shrink:0}
+.fact{font-size:13px;line-height:1.65;background:#f8f7f3;border-left:2px solid #378ADD;padding:11px 13px;border-radius:0 6px 6px 0;margin-bottom:.9rem}
+.stem{font-size:13.5px;font-weight:500;line-height:1.5;margin-bottom:.8rem}
+/* MC */
+.choices{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem}
+.ch{text-align:left;font-size:13px;line-height:1.5;padding:9px 13px;border-radius:8px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;transition:all .15s;width:100%}
+.ch:not(.locked):hover{background:#f5f4f0;border-color:#378ADD}
+.ch.selected{border-color:#378ADD;background:#EBF3FB}
+.ch.correct{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.ch.wrong{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.ch.locked{cursor:default}
+/* Drag & Drop */
+.dnd-hint{font-size:11px;color:#9c9a92;margin-bottom:7px;font-style:italic}
+.dnd-pool{min-height:56px;padding:9px;border:.5px dashed #c8c6be;border-radius:8px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px;background:#f8f7f3}
+.dnd-item{font-size:12px;padding:7px 11px;border-radius:6px;border:.5px solid #c8c6be;background:#fff;cursor:grab;line-height:1.4;transition:all .15s;user-select:none}
+.dnd-item:hover:not(.ok):not(.bad){border-color:#378ADD}
+.dnd-item.sel{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.dnd-item.ok{background:#EAF3DE;border-color:#3B6D11;color:#27500A;cursor:default}
+.dnd-item.bad{background:#FCEBEB;border-color:#A32D2D;color:#791F1F;cursor:default}
+.bins-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.bin{flex:1;min-width:140px;min-height:90px;padding:9px;border-radius:8px;border:.5px solid #c8c6be;display:flex;flex-direction:column;gap:5px;transition:all .15s}
+.bin.drag-over{border-color:#185FA5;background:#EBF3FB}
+.bin-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;padding:4px 7px;border-radius:4px;text-align:center;margin-bottom:2px}
+.bin-0 .bin-label{background:#EAF3DE;color:#27500A}
+.bin-1 .bin-label{background:#FCEBEB;color:#791F1F}
+.bin-2 .bin-label{background:#FAEEDA;color:#412402}
+/* Match */
+.match-grid{display:flex;gap:12px;margin-bottom:1rem}
+.match-col{flex:1;display:flex;flex-direction:column;gap:6px}
+.match-col-hdr{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:#888780;margin-bottom:3px}
+.mi{font-size:12px;padding:9px 11px;border-radius:7px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;line-height:1.4;transition:all .15s;min-height:50px;display:flex;align-items:center}
+.mi:hover:not(.paired):not(.wrong-pair){border-color:#378ADD;background:#f8f7f3}
+.mi.sel-l{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.mi.paired{background:#EAF3DE;border-color:#3B6D11;color:#27500A;cursor:default}
+.mi.wrong-pair{background:#FCEBEB;border-color:#A32D2D;color:#791F1F;cursor:default}
+.mi.locked{cursor:default}
+/* Order */
+.order-hint{font-size:11px;color:#9c9a92;margin-bottom:6px;font-style:italic}
+.order-wrap{display:flex;gap:14px;margin-bottom:1rem;flex-wrap:wrap}
+.order-slots-col,.order-pool-col{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px}
+.slot{display:flex;border-radius:7px;border:.5px solid #c8c6be;overflow:hidden;min-height:46px;cursor:pointer;transition:border-color .15s}
+.slot:hover:not(.locked-slot){border-color:#378ADD}
+.slot-num{width:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#f8f7f3;border-right:.5px solid #c8c6be;font-size:12px;font-weight:500;color:#888780}
+.slot-body{flex:1;padding:6px 9px;font-size:12px;line-height:1.4;display:flex;align-items:center;color:#b4b2a9;font-style:italic;transition:all .15s}
+.slot-body.filled{color:#1a1a18;font-style:normal;background:#EBF3FB}
+.slot-body.ok{background:#EAF3DE;color:#27500A;font-style:normal;cursor:default}
+.slot-body.bad{background:#FCEBEB;color:#791F1F;font-style:normal;cursor:default}
+.oitem{font-size:12px;padding:8px 11px;border-radius:7px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;line-height:1.4;transition:all .15s}
+.oitem:hover:not(.used){border-color:#378ADD;background:#f8f7f3}
+.oitem.sel-o{border-color:#185FA5;background:#B5D4F4;color:#042C53}
+.oitem.used{opacity:.35;cursor:default;pointer-events:none}
+/* Shared */
+.expbox{font-size:13px;line-height:1.65;background:#f8f7f3;border-radius:8px;padding:12px 14px;margin-bottom:1rem;border:.5px solid #d3d1c7}
+.dbox{border-radius:8px;border:.5px solid #d3d1c7;padding:13px;background:#fff;margin-bottom:1rem}
+.nav{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+.btn{font-size:13px;padding:8px 22px;border-radius:8px;border:.5px solid #c8c6be;background:#fff;cursor:pointer;transition:all .15s}
+.btn:hover{background:#f5f4f0}
+.btn.primary{background:#378ADD;color:#fff;border-color:#378ADD}
+.btn.primary:hover{background:#185FA5}
+.btn.dim{opacity:.35;pointer-events:none}
+.sc{text-align:center;padding:3rem 1rem}
+.sc-n{font-size:64px;font-weight:500;color:#378ADD;line-height:1}
+.sc-sub{font-size:14px;color:#888780;margin-top:8px}
+.sc-msg{font-size:15px;font-weight:500;margin-top:1rem}
+/* Diagram helpers */
+.dlabel{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:#888780;margin-bottom:7px}
+.dflow{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:6px}
+.dn{padding:6px 10px;border-radius:6px;font-size:12px;line-height:1.35;text-align:center;border:.5px solid}
+.bl{background:#E6F1FB;border-color:#185FA5;color:#0C447C}
+.gr{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.am{background:#FAEEDA;border-color:#854F0B;color:#633806}
+.rd{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.gy{background:#F1EFE8;border-color:#5F5E5A;color:#2C2C2A}
+.pu{background:#EEEDFE;border-color:#534AB7;color:#26215C}
+.te{background:#E1F5EE;border-color:#0F6E56;color:#04342C}
+.darr{font-size:13px;color:#b4b2a9;flex-shrink:0}
+.d2col{display:flex;gap:8px;margin-top:6px}
+.d2{flex:1;min-width:0;border-radius:6px;overflow:hidden;border:.5px solid #d3d1c7;font-size:12px}
+.d2h{padding:6px 9px;font-size:11px;font-weight:500;text-align:center}
+.d2b{padding:8px 9px;line-height:1.5;background:#f8f7f3}
+.d2b li{margin:0 0 3px 12px}
+.dnote{font-size:11px;color:#73726c;background:#f8f7f3;padding:5px 9px;border-radius:5px;border:.5px solid #d3d1c7;margin-top:7px}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+table.dt th,table.dt td{padding:5px 9px;border:.5px solid #d3d1c7}
+table.dt th{background:#f8f7f3;font-weight:500;text-align:left}
+table.dt .ok{background:#EAF3DE;color:#27500A;font-weight:500}
+table.dt .no{background:#FCEBEB;color:#791F1F;font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Diversity Jurisdiction — Set 2: Aliens &amp; Foreign Citizens</h1>
+<div id="root"></div>
+</div>
+<script>
+var Qs=[
+
+/* ── Q1  MC ── */
+{type:'mc',
+topic:'Dual U.S./foreign nationality — which citizenship controls?',
+fact:'P holds dual citizenship: she is both a U.S. citizen and a citizen of France. P is domiciled in Texas. D is a lifelong citizen of Texas. P sues D for $200,000, arguing that her French citizenship creates alienage diversity under §1332(a)(2).',
+stem:'Does the federal court have diversity jurisdiction?',
+choices:[
+'(a) Yes — P holds French citizenship, which triggers §1332(a)(2) alienage jurisdiction over any suit between P and a U.S. citizen.',
+'(b) No — for a U.S. citizen, domicile state controls; P is a Texas citizen for §1332 purposes. TX vs. TX destroys complete diversity regardless of P\'s dual nationality.',
+'(c) Yes — because P has dual nationality, the court may choose which citizenship to apply; it will select the one that creates jurisdiction.',
+'(d) No — federal courts never have jurisdiction over dual nationals because their citizenship is inherently ambiguous.',
+'(e) Yes — §1332(a)(3) covers the scenario because an alien is an additional party on P\'s side.'
+],
+ans:1,
+exp:'For diversity purposes, a U.S. citizen\'s citizenship is determined by domicile state — full stop. A U.S. citizen\'s foreign nationality is irrelevant to the §1332 analysis. P is a U.S. citizen domiciled in Texas → P is a Texas citizen for §1332. P (TX) vs. D (TX) = no complete diversity. The dual-nationality argument fails because §1332(a)(2) is a provision about non-U.S.-citizen aliens, not about U.S. citizens who happen to also hold foreign passports. Courts consistently apply domicile-state citizenship to U.S. citizens regardless of additional foreign nationalities.',
+diag:`<div class="dlabel">Dual nationality — which citizenship governs §1332?</div>
+<div class="d2col">
+<div class="d2"><div class="d2h" style="background:#C0DD97;color:#173404">U.S. citizen (any additional nationality)</div><div class="d2b"><strong>→ Domicile state controls.</strong><br>Foreign nationality is irrelevant. A U.S. citizen domiciled in Texas is a Texas citizen for §1332, even if also a French citizen.<br><br>§1332(a)(2) was designed for <em>non-U.S.-citizen</em> aliens.</div></div>
+<div class="d2"><div class="d2h" style="background:#B5D4F4;color:#042C53">Non-U.S. citizen alien (no U.S. citizenship)</div><div class="d2b"><strong>→ Foreign nationality + PR check applies.</strong><br>Step 1: Permanent resident? → Deemed citizen of domicile state.<br>Step 2: Non-PR? → Citizen/subject of foreign state → §1332(a)(2).</div></div>
+</div>
+<div class="dnote">Key distinction: U.S. citizenship is the threshold. If a party IS a U.S. citizen, the domicile rule controls and any foreign nationality is ignored for §1332 purposes.</div>`},
+
+/* ── Q2  DRAG & DROP (3 bins) ── */
+{type:'dragdrop',
+topic:'Classify entities — U.S. State citizen, foreign state citizen, or both',
+fact:null,
+stem:'Click an item to select it (turns blue), then click the correct bucket. Each entity falls into exactly one of three §1332 citizenship categories. Drag-and-drop also works.',
+items:[
+'Corp A — incorporated in Delaware, PPB in Texas',
+'Corp B — incorporated in France, PPB in France',
+'Corp C — incorporated in Delaware, PPB in Paris, France',
+'Individual: U.S. citizen, domiciled in New York',
+'Individual: citizen of France (non-permanent resident), domiciled in New York',
+'Individual: citizen of France, lawful permanent resident, domiciled in Florida'
+],
+bins:['U.S. State citizen only','Foreign state citizen only','Citizen of BOTH a U.S. State AND a foreign state'],
+correct:[0,1,2,0,1,0],
+exp:'Corp A (DE+TX): both states are U.S. states → U.S. State citizen only. Corp B (France+France): only foreign state citizenships → Foreign state citizen only. Corp C (DE+France): DE = U.S. state, France = foreign state → BOTH. Individual U.S. citizen (NY domicile) → U.S. State citizen only. France non-PR → citizen/subject of France = foreign state citizen only. France PR (FL domicile) → deemed FL citizen by §1332(a) → U.S. State citizen only (loses foreign citizen status for diversity purposes).',
+diag:`<div class="dlabel">§1332(c)(1) — corporate citizenship with a foreign PPB</div>
+<div class="dflow">
+<div class="dn gy" style="max-width:100px">Corporation</div><div class="darr">→</div>
+<div class="dn am" style="max-width:140px">Every state of incorporation</div><div class="darr">+</div>
+<div class="dn bl" style="max-width:160px">State OR foreign state of PPB (nerve center)</div>
+</div>
+<div class="dnote">Corp C (DE incorporation + France PPB) is a citizen of <strong>both</strong> Delaware (a U.S. state) and France (a foreign state). This creates a hybrid citizenship that can simultaneously satisfy §1332(a)(1) and (a)(2) depending on the opposing party.</div>`},
+
+/* ── Q3  MC ── */
+{type:'mc',
+topic:'Corporation with principal place of business in a foreign country',
+fact:'Corp is incorporated in Delaware and has its principal place of business (its "nerve center") in Paris, France. P, a citizen of Texas, sues Corp for $200,000 in federal court.',
+stem:'What is Corp\'s citizenship for §1332 purposes, and does diversity jurisdiction exist?',
+choices:[
+'(a) No diversity — Corp is a citizen of Delaware only; a foreign PPB is not a basis for corporate citizenship under §1332.',
+'(b) No diversity — Corp\'s PPB in France makes it a "foreign corporation" not subject to §1332 diversity jurisdiction.',
+'(c) Yes — under §1332(c)(1), Corp is a citizen of Delaware (state of incorporation) AND France (foreign state of PPB); P (Texas) is diverse from both; diversity jurisdiction exists.',
+'(d) No — complete diversity fails because a corporation with foreign-country citizenship cannot be a defendant in a §1332 diversity suit.',
+'(e) Yes — but Corp\'s French PPB is irrelevant; jurisdiction exists solely because Corp is incorporated in Delaware, a different state from Texas.'
+],
+ans:2,
+exp:'§1332(c)(1): a corporation is a citizen of "every State and foreign state by which it has been incorporated and of the State or foreign state where it has its principal place of business." Corp\'s PPB is in France — a foreign state — so Corp is a citizen of Delaware (state of incorporation) AND France (foreign state of PPB). P (Texas) is diverse from Corp (Delaware): TX ≠ DE ✓. P (Texas) is diverse from Corp (France): Texas is not France ✓. §1332(a)(2) covers P (Texas state citizen) vs. Corp (which includes French citizenship). Jurisdiction exists. Answer (e) is wrong — the French PPB creates a real citizenship, and the analysis must account for it.',
+diag:`<div class="dlabel">Corp with foreign PPB — citizenship breakdown</div>
+<div class="dflow">
+<div class="dn gy">Corp</div><div class="darr">→</div>
+<div class="dn bl" style="max-width:130px">Citizen of Delaware (state of incorporation)</div><div class="darr">+</div>
+<div class="dn pu" style="max-width:140px">Citizen of France (foreign state of PPB)</div>
+</div>
+<div class="dflow" style="margin-top:8px">
+<div class="dn am" style="max-width:100px">P (Texas)</div><div class="darr">vs.</div>
+<div class="dn gy" style="max-width:180px">Corp (Delaware + France)</div><div class="darr">→</div>
+<div class="dn gr" style="max-width:160px">TX≠DE ✓ and TX≠France ✓<br>→ Diversity EXISTS</div>
+</div>
+<div class="dnote">§1332(c)(1) uses the phrase "State or foreign state" for PPB — explicitly including foreign countries. A Delaware-incorporated company headquartered in Paris is a citizen of both.</div>`},
+
+/* ── Q4  MATCH ── */
+{type:'match',
+topic:'Entity type → §1332 citizenship rule — match them',
+fact:null,
+stem:'Click a party type on the left to select it (blue highlight), then click the matching citizenship rule on the right. Click a paired item again to unpair it.',
+left:[
+'A. Individual U.S. citizen domiciled in Ohio',
+'B. Citizen of Italy — lawful permanent resident, domiciled in Florida',
+'C. Corporation incorporated in Nevada with PPB in California',
+'D. Limited liability company whose two members are domiciled in Texas and New York'
+],
+right:[
+'1. Citizen of the state of domicile (general §1332 rule for U.S. individuals)',
+'2. Deemed citizen of the state of domicile under the §1332(a) permanent resident provision',
+'3. Citizen of every state of incorporation + state or foreign state of PPB — §1332(c)(1)',
+'4. Citizen of every state in which any member is a citizen (Carden v. Arkoma rule)'
+],
+correct:[0,1,2,3],
+exp:'A → Rule 1: U.S. citizens are citizens of their state of domicile. B → Rule 2: A permanent resident alien is deemed a citizen of their domicile state under §1332(a) — Florida. C → Rule 3: §1332(c)(1) — citizen of Nevada (incorporation) + California (PPB). D → Rule 4: LLCs are unincorporated entities; under Carden v. Arkoma Associates, they take the citizenship of all members — here, Texas and New York. The corporate rule (Rule 3) does NOT apply to LLCs, partnerships, or other unincorporated entities.',
+diag:`<div class="dlabel">§1332 citizenship rules — four entities</div>
+<table class="dt"><thead><tr><th>Entity</th><th>Citizenship rule</th><th>Key statute/case</th></tr></thead>
+<tbody>
+<tr><td>Individual U.S. citizen</td><td>State of domicile</td><td>§1332 general</td></tr>
+<tr><td>Permanent resident alien</td><td>Deemed citizen of domicile state</td><td>§1332(a) PR provision</td></tr>
+<tr><td>Corporation</td><td>Every state of incorporation + state/foreign state of PPB</td><td>§1332(c)(1)</td></tr>
+<tr><td>LLC / partnership / unincorporated entity</td><td>Every state where any member/partner is a citizen</td><td>Carden v. Arkoma</td></tr>
+</tbody></table>
+<div class="dnote"><strong>Trap:</strong> LLCs are NOT corporations. The §1332(c)(1) corporate rule does not apply to LLCs. An LLC with one Texas member and one France non-PR member is a citizen of both Texas AND France.</div>`},
+
+/* ── Q5  MC ── */
+{type:'mc',
+topic:'U.S. territories — Puerto Rico as a "State" under §1332(e)',
+fact:'P is a U.S. citizen domiciled in Puerto Rico. D is a citizen of New York. P sues D for $100,000 in federal court, asserting diversity jurisdiction. D moves to dismiss, arguing Puerto Rico is not a "State" for §1332 purposes.',
+stem:'Is D\'s motion correct?',
+choices:[
+'(a) Yes — Puerto Rico is a U.S. territory, not a State; P cannot be a "citizen of a State" under §1332, so no diversity jurisdiction exists.',
+'(b) No — 28 U.S.C. §1332(e) expressly defines "States" to include the Commonwealth of Puerto Rico; P is treated as a citizen of Puerto Rico (a "State") for diversity purposes, and PR ≠ NY creates diversity.',
+'(c) Yes — only the 50 U.S. states and the District of Columbia are "States" under §1332; U.S. territories are excluded.',
+'(d) No — Puerto Rico residents are U.S. citizens, so they automatically satisfy diversity jurisdiction against citizens of any state.',
+'(e) Yes — diversity jurisdiction over Puerto Rico residents must be based on §1332(a)(2) alienage, not §1332(a)(1).'
+],
+ans:1,
+exp:'28 U.S.C. §1332(e): "For the purposes of this section and section 1441 of this title — (1) A corporation incorporated in the District of Columbia, in the Commonwealth of Puerto Rico, or in any territory... shall be deemed a citizen of the State in which it has its principal place of business... (2) \'States\' as used in this section shall be construed to include... the Commonwealth of Puerto Rico." Congress expressly extended the definition of "States" to include Puerto Rico and other territories for §1332 purposes. P (Puerto Rico) vs. D (New York) = PR ≠ NY → complete diversity exists.',
+diag:`<div class="dlabel">§1332(e) — territories treated as "States" for diversity</div>
+<div class="dflow">
+<div class="dn bl" style="max-width:180px">§1332(e) defines "States" to include:<br>• District of Columbia<br>• Puerto Rico<br>• U.S. territories &amp; possessions</div><div class="darr">→</div>
+<div class="dn gr" style="max-width:200px">Citizens of these places are treated as citizens of a "State" for all §1332 diversity purposes</div>
+</div>
+<div class="dnote">P (Puerto Rico) vs. D (New York): "Puerto Rico" ≠ "New York" → complete diversity exists under §1332(a)(1) as extended by §1332(e). D's motion to dismiss should be denied.</div>`},
+
+/* ── Q6  ORDER ── */
+{type:'order',
+topic:'Corporate citizenship analysis — correct sequence',
+fact:null,
+stem:'Click a step from the pool (right) to select it, then click a numbered slot (left) to place it. Arrange the corporate citizenship analysis in the correct order, first to last.',
+steps:[
+'Identify the corporation\'s principal place of business using the Hertz "nerve center" test — where high-level officers direct, control, and coordinate the corporation\'s activities',
+'Assign corporate citizenship: citizen of every state of incorporation AND the state or foreign state of the PPB — §1332(c)(1)',
+'Identify every state (and foreign state) in which the corporation is incorporated',
+'Apply complete diversity analysis: every plaintiff must be diverse from every defendant using the corporation\'s full citizenship list',
+'If the PPB is located in a foreign country, recognize that the corporation is also a citizen of that foreign state — not just a U.S. state'
+],
+correctOrder:[2,0,4,1,3],
+exp:'Correct sequence: (1) Identify states of incorporation — these are fixed and definite. (2) Identify the PPB using the Hertz nerve center test — the location of high-level direction and control. (3) Determine whether the PPB is in a foreign country — if so, the corporation is a citizen of that foreign state under §1332(c)(1). (4) Assign the full citizenship: every state of incorporation + the state or foreign state of the PPB. (5) Apply complete diversity across all parties using the corporation\'s full citizenship list.',
+diag:`<div class="dlabel">Corporate citizenship — analysis flowchart</div>
+<div class="dflow" style="flex-wrap:wrap;gap:6px">
+<div class="dn gy" style="max-width:120px">1. ID states of incorporation</div><div class="darr">→</div>
+<div class="dn am" style="max-width:130px">2. Find PPB (Hertz nerve center test)</div><div class="darr">→</div>
+<div class="dn pu" style="max-width:140px">3. Is PPB in a foreign country? → Add foreign state citizenship</div><div class="darr">→</div>
+<div class="dn bl" style="max-width:130px">4. Assign full citizenship: incorporation + PPB</div><div class="darr">→</div>
+<div class="dn gr" style="max-width:120px">5. Complete diversity check</div>
+</div>
+<div class="dnote"><strong>Hertz Corp. v. Friend (2010):</strong> PPB = "nerve center" — the place where a corporation's high-level officers direct, control, and coordinate the corporation's activities. Usually corporate headquarters.</div>`},
+
+/* ── Q7  DRAG & DROP (3 bins) ── */
+{type:'dragdrop',
+topic:'Sort scenarios by §1332 jurisdiction category',
+fact:null,
+stem:'Sort each scenario into the correct §1332 jurisdiction category. Click to select, then click a bucket — or drag directly.',
+items:[
+'P (Texas citizen) vs. D (California citizen) — $100k',
+'P (Texas citizen) + P2 (Italy, non-PR) vs. D (California citizen) — $100k',
+'P (France, non-PR) vs. D (Texas citizen) — $100k',
+'P (France, non-PR) vs. D (Germany, non-PR) — $100k',
+'Republic of France (plaintiff) vs. D (Texas citizen) — $100k',
+'P (France, PR, domiciled Texas) vs. D (California citizen) — $100k'
+],
+bins:['Domestic diversity — §1332(a)(1)','Alienage jurisdiction — §1332(a)(2), (3), or (4)','No §1332 jurisdiction'],
+correct:[0,1,1,2,1,0],
+exp:'(1) TX vs CA — pure §(a)(1) domestic diversity. (2) TX + Italy vs CA — §(a)(3): diverse U.S. citizens + alien as additional party. (3) France non-PR vs TX — §(a)(2) alienage. (4) France vs Germany — alien vs. alien, no U.S. state citizen, no §1332 category → NO JURISDICTION. (5) Republic of France as plaintiff vs TX — §(a)(4). (6) France PR domiciled TX → deemed TX citizen — TX vs CA is §(a)(1) domestic diversity (PR rule converts the alien to a U.S. state citizen).',
+diag:`<div class="dlabel">§1332(a) subsection decision tree</div>
+<div class="dflow">
+<div class="dn gy" style="max-width:120px">Identify party mix</div><div class="darr">→</div>
+<div class="dn am" style="max-width:150px">Any alien? Apply PR rule first (deemed state citizen)</div><div class="darr">→</div>
+<div class="dn bl" style="max-width:150px">Now: is it U.S. state citizens only on both sides?</div>
+</div>
+<div class="dflow" style="padding-left:10px;margin-top:5px"><div class="darr">YES →</div><div class="dn gr">§1332(a)(1) domestic diversity</div></div>
+<div class="dflow" style="padding-left:10px;margin-top:5px"><div class="darr">NO → U.S. citizen vs. alien?</div><div class="dn pu" style="margin-left:5px">§1332(a)(2)/(3)/(4) alienage</div></div>
+<div class="dflow" style="padding-left:10px;margin-top:5px"><div class="darr">NO → Alien vs. alien only?</div><div class="dn rd" style="margin-left:5px">NO §1332 jurisdiction</div></div>`},
+
+/* ── Q8  MC ── */
+{type:'mc',
+topic:'§1332(a)(2) — alien may be plaintiff OR defendant',
+fact:'P is a citizen of Japan (non-permanent resident) domiciled in California. D is a citizen of California. D argues that §1332(a)(2) only grants jurisdiction when the alien is the defendant, not the plaintiff.',
+stem:'Is D\'s argument correct?',
+choices:[
+'(a) Yes — §1332(a)(2) covers "citizens of a State and citizens or subjects of a foreign state," placing U.S. state citizens first; the alien must be the defendant.',
+'(b) No — §1332(a)(2) is bidirectional; an alien may appear as either the plaintiff or the defendant. But here, P (Japan non-PR) is deemed a Japanese citizen, not a California citizen. However, D is also a California citizen — so the real problem is whether complete diversity exists.',
+'(c) No — §1332(a)(2) applies regardless of which side the alien is on; a Japanese citizen (plaintiff) suing a California citizen (defendant) satisfies it, and diversity exists.',
+'(d) Yes — aliens may only invoke federal court jurisdiction as defendants, not as plaintiffs; alienage jurisdiction is a shield, not a sword.',
+'(e) No — but jurisdiction fails for a different reason: P is domiciled in California, creating a domicile overlap with D.'
+],
+ans:1,
+exp:'§1332(a)(2) covers "citizens of a State and citizens or subjects of a foreign state" — the language is symmetrical and does not specify which side each must appear on. An alien may be plaintiff or defendant. However, the real trap in this question is the domicile issue: P is a non-PR alien domiciled in California. As a non-PR alien, P is a citizen/subject of Japan — NOT deemed a California citizen (only permanent residents are deemed state citizens). So P (Japan) vs. D (California): §1332(a)(2) applies. BUT does complete diversity exist? P (Japan) ≠ D (California) ✓ — Japan is not California. Diversity EXISTS. Answer (b) is most accurate because it correctly applies §1332(a)(2) bidirectionally AND flags that the domicile-in-same-state concern applies only to permanent residents, not non-PR aliens.',
+diag:`<div class="dlabel">§1332(a)(2) — bidirectional alienage jurisdiction</div>
+<div class="d2col">
+<div class="d2"><div class="d2h" style="background:#C0DD97;color:#173404">Alien as PLAINTIFF</div><div class="d2b">P (Japan, non-PR) sues D (Texas citizen)<br><br>§1332(a)(2): "citizens of a State AND citizens or subjects of a foreign state"<br>→ D is citizen of a State ✓<br>→ P is citizen of Japan ✓<br>→ <strong>Jurisdiction EXISTS</strong></div></div>
+<div class="d2"><div class="d2h" style="background:#C0DD97;color:#173404">Alien as DEFENDANT</div><div class="d2b">P (Texas citizen) sues D (Japan, non-PR)<br><br>§1332(a)(2): same language, same result<br>→ P is citizen of a State ✓<br>→ D is citizen of Japan ✓<br>→ <strong>Jurisdiction EXISTS</strong></div></div>
+</div>
+<div class="dnote"><strong>Critical distinction:</strong> The domicile trap only applies to PERMANENT RESIDENT aliens (deemed state citizen). A non-PR alien domiciled in California is still a Japanese citizen — not a California citizen — so domicile overlap with D doesn't destroy diversity under §1332(a)(2).</div>`},
+
+/* ── Q9  DRAG & DROP (2 bins — complex scenarios) ── */
+{type:'dragdrop',
+topic:'Survive or dismiss — complex alien diversity scenarios',
+fact:null,
+stem:'Would each case survive a motion to dismiss for lack of §1332 diversity jurisdiction? Click to select, then click a bucket.',
+items:[
+'P (France, PR, domiciled Texas) vs. D (Texas citizen) — $200k',
+'P (New York citizen) vs. Corp D (incorporated New York, PPB in California) — $200k',
+'P (stateless — renounced all foreign citizenship, not a U.S. citizen) vs. D (Texas citizen) — $200k',
+'P (Texas citizen) vs. D (France, non-PR) — $200k',
+'Republic of Germany (plaintiff) vs. Corp D (incorporated Delaware, PPB New York) — $200k',
+'P1 (Texas citizen) + P2 (France, PR, domiciled Texas) vs. D (California citizen) — $200k'
+],
+bins:['Survives — §1332 jurisdiction exists ✓','Dismissed — no §1332 jurisdiction ✗'],
+correct:[1,1,1,0,0,0],
+exp:'(1) P deemed TX (PR+TX domicile) vs D (TX): TX=TX → DISMISS. (2) P (NY) vs Corp D (NY+CA): Corp is citizen of NY and CA. P (NY) shares NY citizenship with Corp → complete diversity fails → DISMISS. (3) Stateless person — no §1332 category → DISMISS. (4) P (TX) vs D (France non-PR): §1332(a)(2) → SURVIVE. (5) Republic of Germany (plaintiff) vs Corp D (DE+NY): §1332(a)(4) → SURVIVE. (6) P1 (TX) + P2 deemed TX (PR+TX domicile) vs D (CA): all plaintiffs are TX state citizens, D is CA citizen — TX≠CA → §1332(a)(1) → SURVIVE.',
+diag:`<div class="dlabel">Why scenario (2) fails — the corporate citizenship trap</div>
+<div class="dflow">
+<div class="dn am" style="max-width:130px">P (New York citizen)</div><div class="darr">vs.</div>
+<div class="dn gy" style="max-width:180px">Corp D — incorporated in NY, PPB in California<br>= citizen of NY <strong>AND</strong> CA</div>
+</div>
+<div class="dflow" style="margin-top:8px">
+<div class="dn rd" style="max-width:340px">P (NY) shares NY citizenship with Corp D → complete diversity FAILS even though Corp D is also a CA citizen</div>
+</div>
+<div class="dnote">Complete diversity requires every plaintiff diverse from every defendant. If a corporation is incorporated in the same state as a plaintiff, diversity is destroyed — even if the corporation also has citizenship elsewhere.</div>`},
+
+/* ── Q10  MC ── */
+{type:'mc',
+topic:'§1332(a)(3) — aliens as additional parties on BOTH sides',
+fact:'P1 (citizen of Texas) and P2 (citizen of France, non-permanent resident) jointly sue D1 (citizen of California) and D2 (citizen of Germany, non-permanent resident) for $500,000. D1 argues that having non-PR aliens on both sides of the case — P2 on the plaintiff\'s side and D2 on the defendant\'s side — means no §1332 subsection can apply.',
+stem:'Is D1\'s argument correct?',
+choices:[
+'(a) Yes — §1332(a)(3) only accommodates alien additional parties on one side; aliens on both sides destroys the subsection\'s applicability.',
+'(b) Yes — §1332(a)(3) requires all aliens to be on the plaintiff\'s side; D2 (Germany) on the defendant\'s side disqualifies the subsection.',
+'(c) No — §1332(a)(3) grants jurisdiction where citizens of different states are parties (P1: TX and D1: CA are the diverse U.S.-citizen anchor) and citizens or subjects of a foreign state are additional parties; the statute does not restrict which side the alien additional parties appear on.',
+'(d) No — but jurisdiction arises under §1332(a)(2), not §1332(a)(3), because both U.S. and alien citizens appear on both sides.',
+'(e) Yes — when aliens appear on opposite sides of the case, complete diversity is automatically destroyed regardless of the U.S.-citizen parties\' alignment.'
+],
+ans:2,
+exp:'§1332(a)(3) provides jurisdiction in suits "between citizens of different States and in which citizens or subjects of a foreign state are additional parties." The statute describes two requirements: (1) citizens of different U.S. states are parties — the anchor (P1: TX vs. D1: CA); (2) citizens or subjects of a foreign state are "additional parties." The statute says nothing restricting where the alien additional parties must appear. Courts have held that aliens may appear on either side, or on both sides, as additional parties, so long as the U.S.-citizen anchor provides complete diversity. D1\'s argument fails.',
+diag:`<div class="dlabel">§1332(a)(3) — aliens on both sides as additional parties</div>
+<div class="dflow">
+<div class="dn bl" style="max-width:140px"><strong>Anchor (required):</strong><br>P1 (TX) vs D1 (CA)<br>TX ≠ CA ✓</div><div class="darr">+</div>
+<div class="dn pu" style="max-width:130px"><strong>Additional alien P2 (France)</strong><br>on plaintiff side</div><div class="darr">+</div>
+<div class="dn am" style="max-width:130px"><strong>Additional alien D2 (Germany)</strong><br>on defendant side</div><div class="darr">→</div>
+<div class="dn gr" style="max-width:110px">§1332(a)(3) jurisdiction EXISTS</div>
+</div>
+<div class="dnote">The statute requires diverse U.S.-citizen parties as the anchor — it does not specify which side the alien "additional parties" must occupy. Aliens may appear on one side, both sides, or neither side (in which case §(a)(1) applies).</div>`}
+
+];/* end Qs */
+
+/* ── STATE ── */
+function initQS(){
+  return Qs.map(function(q){
+    if(q.type==='mc')return{sel:null,submitted:false};
+    if(q.type==='dragdrop')return{placements:new Array(q.items.length).fill(null),selItem:null,submitted:false};
+    if(q.type==='match')return{pairs:new Array(q.left.length).fill(null),selLeft:null,submitted:false};
+    if(q.type==='order')return{slots:new Array(q.correctOrder.length).fill(null),selItem:null,submitted:false};
+  });
+}
+var S={cur:0,done:false,qs:initQS()};
+
+/* ── HELPERS ── */
+function complete(q,qs){
+  if(q.type==='mc')return qs.sel!==null;
+  if(q.type==='dragdrop')return qs.placements.every(function(p){return p!==null;});
+  if(q.type==='match')return qs.pairs.every(function(p){return p!==null;});
+  if(q.type==='order')return qs.slots.every(function(s){return s!==null;});
+}
+function correct(q,qs){
+  if(q.type==='mc')return qs.sel===q.ans;
+  if(q.type==='dragdrop')return qs.placements.every(function(p,i){return p===q.correct[i];});
+  if(q.type==='match')return qs.pairs.every(function(p,i){return p===q.correct[i];});
+  if(q.type==='order')return qs.slots.every(function(s,j){return s===q.correctOrder[j];});
+}
+function totalScore(){return Qs.reduce(function(a,_,i){return a+(S.qs[i].submitted&&correct(Qs[i],S.qs[i])?1:0);},0);}
+
+/* ── RENDERERS ── */
+function rMC(q,qs){
+  var s=qs.submitted;
+  return'<div class="choices">'+q.choices.map(function(c,i){
+    var cl='ch';
+    if(s){cl+=' locked';if(i===q.ans)cl+=' correct';else if(i===qs.sel&&qs.sel!==q.ans)cl+=' wrong';}
+    else if(qs.sel===i)cl+=' selected';
+    return'<button class="'+cl+'" data-action="mc" data-i="'+i+'">'+c+'</button>';
+  }).join('')+'</div>';
+}
+
+function rDnD(q,qs){
+  var s=qs.submitted;
+  function itm(i){
+    var cl='dnd-item';
+    if(s)cl+=qs.placements[i]===q.correct[i]?' ok':' bad';
+    else if(qs.selItem===i)cl+=' sel';
+    return'<div class="'+cl+'" data-action="di" data-i="'+i+'" draggable="'+(s?'false':'true')+'">'+q.items[i]+'</div>';
+  }
+  var pool=q.items.map(function(_,i){return qs.placements[i]===null?itm(i):'';}).join('');
+  var bhtml='<div class="bins-row">';
+  for(var b=0;b<q.bins.length;b++){
+    var bItems=q.items.map(function(_,i){return qs.placements[i]===b?itm(i):'';}).join('');
+    bhtml+='<div class="bin bin-'+b+'" data-action="db" data-b="'+b+'"><div class="bin-label">'+q.bins[b]+'</div>'+bItems+'</div>';
+  }
+  bhtml+='</div>';
+  return'<p class="dnd-hint">Click item to select → click a bucket to place it. Or drag directly.</p>'+
+    '<div class="dnd-pool" data-action="dp">'+(pool||'<span style="font-size:12px;color:#b4b2a9;font-style:italic">All items placed</span>')+'</div>'+bhtml;
+}
+
+function rMatch(q,qs){
+  var s=qs.submitted;
+  var left=q.left.map(function(t,i){
+    var cl='mi';
+    if(s)cl+=qs.pairs[i]===q.correct[i]?' paired':' wrong-pair';
+    else if(qs.selLeft===i)cl+=' sel-l';
+    else if(qs.pairs[i]!==null)cl+=' paired';
+    return'<div class="'+cl+'" data-action="ml" data-i="'+i+'">'+t+'</div>';
+  }).join('');
+  var right=q.right.map(function(t,j){
+    var cl='mi';
+    if(s){var li=qs.pairs.indexOf(j);if(li!==-1)cl+=qs.pairs[li]===q.correct[li]?' paired':' wrong-pair';}
+    else if(qs.pairs.indexOf(j)!==-1)cl+=' paired';
+    return'<div class="'+cl+'" data-action="mr" data-i="'+j+'">'+t+'</div>';
+  }).join('');
+  return'<p class="dnd-hint">Click a left item to select it, then click a right item to pair. Click a paired item to unpair.</p>'+
+    '<div class="match-grid">'+
+    '<div class="match-col"><div class="match-col-hdr">Party / entity types</div>'+left+'</div>'+
+    '<div class="match-col"><div class="match-col-hdr">Citizenship rules</div>'+right+'</div>'+
+    '</div>';
+}
+
+function rOrder(q,qs){
+  var s=qs.submitted;
+  var used=new Set(qs.slots.filter(function(x){return x!==null;}));
+  if(qs.selItem!==null)used.delete(qs.selItem);
+  var slots=q.correctOrder.map(function(_,j){
+    var p=qs.slots[j];
+    var bc='slot-body';
+    if(s)bc+=p===q.correctOrder[j]?' ok':' bad';
+    else if(p!==null)bc+=' filled';
+    var txt=p!==null?q.steps[p]:'Click a step, then click here to place it';
+    return'<div class="slot" data-action="os" data-j="'+j+'"><div class="slot-num">'+(j+1)+'</div><div class="'+bc+'">'+txt+'</div></div>';
+  }).join('');
+  var pool=q.steps.map(function(t,i){
+    var cl='oitem';
+    if(used.has(i))cl+=' used';
+    else if(qs.selItem===i)cl+=' sel-o';
+    return'<div class="'+cl+'" data-action="oi" data-i="'+i+'">'+t+'</div>';
+  }).join('');
+  return'<div class="order-wrap">'+
+    '<div class="order-slots-col"><div class="order-hint">← Slots — place steps in order</div>'+slots+'</div>'+
+    '<div class="order-pool-col"><div class="order-hint">← Pool — click to select</div>'+pool+'</div>'+
+    '</div>';
+}
+
+/* ── MAIN RENDER ── */
+function render(){
+  var root=document.getElementById('root');
+  if(S.done){
+    var sc=totalScore();var pct=Math.round(sc/Qs.length*100);
+    var msg=pct>=90?'Excellent — exam ready.':pct>=80?'Strong — review the misses.':pct>=70?'Solid — targeted review needed.':pct>=60?'Keep drilling.':'Heavy review needed — use the diagrams.';
+    root.innerHTML='<div class="pb-bg"><div class="pb-f" style="width:100%"></div></div>'+
+      '<div class="sc"><div class="sc-n">'+sc+'/'+Qs.length+'</div><div class="sc-sub">'+pct+'% correct</div>'+
+      '<div class="sc-msg">'+msg+'</div>'+
+      '<button class="btn primary" data-action="restart" style="margin-top:1.5rem">Retake quiz</button></div>';
+    return;
+  }
+  var q=Qs[S.cur],qs=S.qs[S.cur],s=qs.submitted;
+  var pct=Math.round((S.cur+1)/Qs.length*100);
+  var typeLabel={mc:'multiple choice',dragdrop:'drag & drop',match:'matching',order:'ordering'};
+  var html='<div class="pb-bg"><div class="pb-f" style="width:'+pct+'%"></div></div>'+
+    '<div class="qh"><div class="qh-l"><span class="qtag">'+q.topic+'</span>'+
+    '<span class="qtype '+q.type+'">'+typeLabel[q.type]+'</span></div>'+
+    '<span class="qnum">'+(S.cur+1)+' / '+Qs.length+'</span></div>';
+  if(q.fact)html+='<div class="fact">'+q.fact+'</div>';
+  html+='<div class="stem">'+q.stem+'</div>';
+  if(q.type==='mc')html+=rMC(q,qs);
+  else if(q.type==='dragdrop')html+=rDnD(q,qs);
+  else if(q.type==='match')html+=rMatch(q,qs);
+  else if(q.type==='order')html+=rOrder(q,qs);
+  if(s)html+='<div class="expbox">'+q.exp+'</div><div class="dbox">'+q.diag+'</div>';
+  var ok=complete(q,qs);
+  html+='<div class="nav">'+
+    (S.cur>0?'<button class="btn" data-action="prev">← Previous</button>':'')+
+    (!s?'<button class="btn primary'+(ok?'':' dim')+'" data-action="check">Check answer</button>':'')+
+    (s?'<button class="btn primary" data-action="'+(S.cur===Qs.length-1?'finish':'next')+'">'+(S.cur===Qs.length-1?'See results':'Next →')+'</button>':'')+
+    '</div>';
+  root.innerHTML=html;
+}
+
+/* ── DRAG EVENTS ── */
+var dragId=null;
+document.addEventListener('dragstart',function(e){
+  var el=e.target.closest('.dnd-item[draggable="true"]');
+  if(el)dragId=parseInt(el.dataset.i);
+});
+document.addEventListener('dragover',function(e){
+  if(e.target.closest('.bin')||e.target.closest('.dnd-pool'))e.preventDefault();
+});
+document.addEventListener('drop',function(e){
+  var bin=e.target.closest('.bin');
+  var pool=e.target.closest('.dnd-pool');
+  if(!bin&&!pool){return;}
+  e.preventDefault();
+  var qs=S.qs[S.cur];
+  if(qs.submitted||dragId===null)return;
+  if(bin)qs.placements[dragId]=parseInt(bin.dataset.b);
+  else qs.placements[dragId]=null;
+  qs.selItem=null;dragId=null;render();
+});
+
+/* ── CLICK HANDLER ── */
+document.getElementById('root').addEventListener('click',function(e){
+  var btn=e.target.closest('[data-action]');
+  if(!btn)return;
+  var a=btn.dataset.action,q=Qs[S.cur],qs=S.qs[S.cur],s=qs.submitted;
+
+  if(a==='mc'&&!s){qs.sel=parseInt(btn.dataset.i);}
+
+  else if(a==='di'&&!s){
+    var id=parseInt(btn.dataset.i);
+    if(qs.placements[id]!==null){
+      if(qs.selItem!==null){qs.placements[qs.selItem]=qs.placements[id];qs.placements[id]=null;qs.selItem=null;}
+      else{qs.placements[id]=null;qs.selItem=id;}
+    }else{qs.selItem=qs.selItem===id?null:id;}
+  }
+  else if(a==='db'&&!s){
+    if(qs.selItem!==null){qs.placements[qs.selItem]=parseInt(btn.dataset.b);qs.selItem=null;}
+  }
+  else if(a==='dp'&&!s){qs.selItem=null;}
+
+  else if(a==='ml'&&!s){
+    var li=parseInt(btn.dataset.i);
+    if(qs.selLeft===li){qs.selLeft=null;}else{qs.pairs[li]=null;qs.selLeft=li;}
+  }
+  else if(a==='mr'&&!s){
+    var ri=parseInt(btn.dataset.i);
+    if(qs.selLeft!==null){
+      qs.pairs.forEach(function(_,k){if(qs.pairs[k]===ri)qs.pairs[k]=null;});
+      qs.pairs[qs.selLeft]=ri;qs.selLeft=null;
+    }else{qs.pairs.forEach(function(_,k){if(qs.pairs[k]===ri)qs.pairs[k]=null;});}
+  }
+
+  else if(a==='oi'&&!s){
+    var oi=parseInt(btn.dataset.i);
+    var inSlot=qs.slots.indexOf(oi);
+    if(inSlot!==-1){qs.selItem=oi;qs.slots[inSlot]=null;}
+    else{qs.selItem=qs.selItem===oi?null:oi;}
+  }
+  else if(a==='os'&&!s){
+    var sj=parseInt(btn.dataset.j);
+    if(qs.selItem!==null){
+      var prev=qs.slots.indexOf(qs.selItem);if(prev!==-1)qs.slots[prev]=null;
+      var disp=qs.slots[sj];qs.slots[sj]=qs.selItem;qs.selItem=disp;
+    }else if(qs.slots[sj]!==null){qs.selItem=qs.slots[sj];qs.slots[sj]=null;}
+  }
+
+  else if(a==='check'){if(complete(q,qs))qs.submitted=true;}
+  else if(a==='next'){S.cur=Math.min(Qs.length-1,S.cur+1);}
+  else if(a==='prev'){S.cur=Math.max(0,S.cur-1);}
+  else if(a==='finish'){S.done=true;}
+  else if(a==='restart'){S.cur=0;S.done=false;S.qs=initQS();}
+
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
